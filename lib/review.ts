@@ -26,7 +26,9 @@ export function dueSentences(sentences: Sentence[], now: number = Date.now()): S
 /** When each grade would bring the sentence back, for the button hints. */
 export function nextDueAt(sentence: Sentence, grade: Grade, now: number = Date.now()): number {
   if (grade === "again") return now + 10 * 60_000;
-  const step = grade === "good" ? sentence.step : Math.max(0, sentence.step - 1);
+  // Hard waits one rung lower; on the first rung that means later today.
+  if (grade === "hard" && sentence.step === 0) return now + 6 * 3_600_000;
+  const step = grade === "good" ? sentence.step : sentence.step - 1;
   const days = REVIEW_LADDER_DAYS[Math.min(step, REVIEW_LADDER_DAYS.length - 1)]!;
   return startOfDay(now) + days * DAY;
 }

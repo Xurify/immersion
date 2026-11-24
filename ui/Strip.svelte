@@ -42,6 +42,14 @@
     border-radius: var(--r-sm);
     background: var(--c);
     overflow: hidden;
+    container-type: inline-size;
+  }
+
+  /* Narrow blocks drop their text rather than show a clipped letter or two. */
+  @container (max-width: 72px) {
+    button > * {
+      visibility: hidden;
+    }
   }
 
   .bare li {

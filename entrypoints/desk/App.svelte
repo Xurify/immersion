@@ -75,7 +75,7 @@
 
   <main>
     {#if view === "today"}
-      <Today onnavigate={go} />
+      <Today onnavigate={go} onsettings={() => (settingsOpen = true)} />
     {:else if view === "videos"}
       <AllVideos />
     {:else if view === "review"}
@@ -188,6 +188,17 @@
 
     nav {
       margin-right: auto;
+    }
+  }
+
+  @media (max-width: 440px) {
+    header {
+      gap: 0.25rem;
+    }
+
+    nav a {
+      padding: 0 9px;
+      font-size: 14px;
     }
   }
 </style>
