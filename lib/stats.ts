@@ -77,3 +77,28 @@ export function summarise(log: ListenLog, goals: Goals, days: number, now: numbe
     langs,
   };
 }
+
+/** The log with only the given languages kept. */
+export function onlyLangs(log: ListenLog, langs: Lang[]): ListenLog {
+  const keep = new Set(langs);
+  const out: ListenLog = {};
+  for (const [key, day] of Object.entries(log)) {
+    out[key] = Object.fromEntries(Object.entries(day).filter(([lang]) => keep.has(lang)));
+  }
+  return out;
+}
+
+/** Time on the given days in languages outside `langs`, a minute or more, most first. */
+export function otherLangs(log: ListenLog, langs: Lang[], keys: string[]): { lang: Lang; seconds: number }[] {
+  const skip = new Set(langs);
+  const totals = new Map<Lang, number>();
+  for (const key of keys) {
+    for (const [lang, seconds] of Object.entries(log[key] ?? {})) {
+      if (!skip.has(lang)) totals.set(lang, (totals.get(lang) ?? 0) + seconds);
+    }
+  }
+  return [...totals]
+    .filter(([, seconds]) => seconds >= 60)
+    .map(([lang, seconds]) => ({ lang, seconds }))
+    .sort((a, b) => b.seconds - a.seconds);
+}

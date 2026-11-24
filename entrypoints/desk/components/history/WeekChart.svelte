@@ -6,10 +6,6 @@
 
   let { summary, goalSeconds }: { summary: RangeSummary; goalSeconds: number } = $props();
 
-  // Must match the grid columns below: label 60px, total 72px, 12px gaps.
-  const TRACK_LEFT = 72;
-  const TRACK_INSET = 156;
-
   const sumOf = (day: Record<string, number>) => Object.values(day).reduce((total, seconds) => total + seconds, 0);
   const today = dateKey();
 
@@ -18,7 +14,9 @@
     return new Date(year, month - 1, day).toLocaleDateString([], { weekday: "short" });
   }
 
-  const scale = $derived(Math.max(goalSeconds, ...summary.perDay.map(sumOf), 1));
+  // Headroom past the goal and the longest day, so the goal mark never sits on the track's end.
+  const scale = $derived(Math.max(goalSeconds, ...summary.perDay.map(sumOf), 1) * 1.08);
+  const goalPercent = $derived((goalSeconds / scale) * 100);
 
   const rows = $derived(
     summary.keys.map((key, i) => {
@@ -39,64 +37,89 @@
       };
     }),
   );
-
-  const goalLeft = $derived(`calc(${TRACK_LEFT}px + (100% - ${TRACK_INSET}px) * ${goalSeconds / scale})`);
 </script>
 
-<div class="week-chart">
-  <div class="week">
-    {#each rows as row (row.key)}
-      <div class="row" class:today={row.isToday}>
-        <span class="day" aria-hidden="true">{row.label}</span>
-        <div class="bar" aria-hidden="true">
+<div class="week">
+  {#each rows as row (row.key)}
+    <div class="row" class:today={row.isToday}>
+      <span class="day" aria-hidden="true">{row.label}</span>
+      <div class="track" aria-hidden="true">
+        <div class="bar">
           {#each row.parts as part (part.lang)}
             <i style:width={`${(part.seconds / scale) * 100}%`} style:background={langColor(part.lang)}></i>
           {/each}
         </div>
-        <span class="total" aria-hidden="true">{duration(row.total)}</span>
-        <span class="sr-only">{row.description}</span>
+        {#if goalSeconds > 0}
+          <i class="goal" style:left={`${goalPercent}%`}></i>
+        {/if}
       </div>
-    {/each}
-    {#if goalSeconds > 0}
-      <div class="goal" style:left={goalLeft} aria-hidden="true"></div>
-    {/if}
-  </div>
+      <span class="total" class:zero={row.total < 60} aria-hidden="true">{row.total < 60 ? "–" : duration(row.total)}</span>
+      <span class="sr-only">{row.description}</span>
+    </div>
+  {/each}
   {#if goalSeconds > 0}
-    <p class="caption">Dashed line: all goals together, {Math.round(goalSeconds / 60)} min</p>
+    <p class="caption">
+      <i class="key" aria-hidden="true"></i>
+      Every goal together: {duration(goalSeconds)} a day
+    </p>
   {/if}
 </div>
 
 <style>
   .week {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 9px;
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) 64px;
+    column-gap: 16px;
+    row-gap: 8px;
+    align-items: center;
   }
 
   .row {
-    display: grid;
-    grid-template-columns: 60px minmax(0, 1fr) 72px;
-    gap: 12px;
-    align-items: center;
-    font-size: 13.5px;
+    display: contents;
+    font-size: 14px;
     font-weight: 500;
   }
 
-  .row.today .day {
+  .day {
+    color: var(--dim);
+  }
+
+  .today .day,
+  .today .total {
+    color: var(--ink);
     font-weight: 800;
+  }
+
+  .track {
+    position: relative;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--soft);
   }
 
   .bar {
     display: flex;
-    gap: 3px;
-    height: 36px;
+    gap: 2px;
+    height: 100%;
+    border-radius: 8px;
+    overflow: hidden;
   }
 
   .bar i {
     flex: none;
     height: 100%;
-    border-radius: 4px;
+  }
+
+  /* Drawn per row; the row gaps break it into the dashes of one goal line. */
+  .goal {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    width: 2px;
+    margin-left: -1px;
+    border-radius: 1px;
+    background: var(--ink-2);
+    opacity: 0.55;
   }
 
   .total {
@@ -105,17 +128,37 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .goal {
-    position: absolute;
-    top: -4px;
-    bottom: -4px;
-    border-left: 2px dashed var(--dim);
-    pointer-events: none;
+  .total.zero {
+    color: var(--dim);
+    font-weight: 500;
   }
 
   .caption {
-    margin: 10px 0 0 72px;
-    font-size: 12.5px;
+    grid-column: 2 / -1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0 0;
+    font-size: 13px;
     color: var(--dim);
+  }
+
+  .key {
+    width: 2px;
+    height: 14px;
+    border-radius: 1px;
+    background: var(--ink-2);
+    opacity: 0.55;
+  }
+
+  @media (max-width: 520px) {
+    .week {
+      grid-template-columns: 44px minmax(0, 1fr) 52px;
+      column-gap: 10px;
+    }
+
+    .row {
+      font-size: 13px;
+    }
   }
 </style>

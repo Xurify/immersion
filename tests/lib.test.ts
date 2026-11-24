@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { interleave, planSession, progressToday } from "../lib/plan";
 import { dueLabel, grade, nextDueAt } from "../lib/review";
-import { summarise } from "../lib/stats";
+import { onlyLangs, otherLangs, summarise } from "../lib/stats";
 import type { OpenVideo, Sentence } from "../lib/types";
 
 const video = (tabId: number, lang: string, remaining: number): OpenVideo => ({
@@ -55,4 +55,11 @@ test("summary totals, goal days and streaks", () => {
   // Today isn't done yet, so the streak still counts the two days before it.
   expect(es.streak).toBe(2);
   expect(es.days.at(-1)).toBe("partly");
+});
+
+test("History keeps goal languages and lists the rest apart", () => {
+  const log = { "2026-11-23": { sk: 600, en: 3120, uk: 30 }, "2026-11-24": { sk: 300, en: 60 } };
+  expect(onlyLangs(log, ["sk"])).toEqual({ "2026-11-23": { sk: 600 }, "2026-11-24": { sk: 300 } });
+  expect(otherLangs(log, ["sk"], ["2026-11-23", "2026-11-24"])).toEqual([{ lang: "en", seconds: 3180 }]);
+  expect(otherLangs(log, ["sk"], ["2026-11-24"])).toEqual([{ lang: "en", seconds: 60 }]);
 });

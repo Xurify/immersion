@@ -19,9 +19,9 @@
 <div class="panel">
   <h3>Appearance</h3>
   <p class="intro">System follows your computer's setting. Light and dark apply to this browser only.</p>
-  <div class="pills" role="group" aria-label="Theme">
+  <div class="seg" role="group" aria-label="Theme">
     {#each OPTIONS as option (option.id)}
-      <button type="button" class="pill" aria-pressed={theme === option.id} onclick={() => choose(option.id)}>
+      <button type="button" aria-pressed={theme === option.id} onclick={() => choose(option.id)}>
         {option.label}
       </button>
     {/each}
@@ -44,15 +44,8 @@
     max-width: 38em;
   }
 
-  .pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .pill {
-    min-height: 2.5rem;
-    padding: 0 1.1rem;
-    font-size: 15px;
+  .seg button {
+    min-height: 2.25rem;
+    padding: 0 18px;
   }
 </style>

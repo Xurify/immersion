@@ -5,7 +5,7 @@ A Chrome extension for learning languages by listening on YouTube.
 - **Board** keeps videos, not tabs, in five columns: Inbox, Up next, Listening now, Done today and Later. **Stash all tabs** saves every YouTube tab to Inbox with its place, then closes it. Playing Up next opens one tab at a time, resumes each video where you left it, and closes it when it ends. **Fill to goals** queues enough of the languages you're behind on. You can drag cards between columns or use the keyboard (arrow keys, plus `N`, `L`, `D`, `I`, `Enter`, `S`, `P`).
 - **All videos** sorts your open YouTube tabs into one column per language. You can start, save or close a selection.
 - **Review** brings back the sentences you saved from captions, on a 1, 3, 7, 16 and 35-day ladder.
-- **History** shows listening per day and per language, with goal days and streaks.
+- **History** shows listening per day and per goal language, with goal days and streaks. Time in other languages is listed apart, with a button to make any of them a goal.
 - **The popup** gives the same plan at a glance, with a Play button per language.
 
 Time counts only while a video plays, under the video's spoken language. The language is detected from YouTube's caption tracks. You can override it per channel from All videos.

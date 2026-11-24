@@ -104,8 +104,13 @@
     position: relative;
     flex: none;
     border-radius: 12px;
+    transition: box-shadow 0.15s ease;
     background: var(--raised);
     box-shadow: 0 1px 0 rgb(0 0 0 / 0.04), 0 0 0 1px var(--line);
+  }
+
+  .card:hover {
+    box-shadow: 0 1px 0 rgb(0 0 0 / 0.04), 0 0 0 1px color-mix(in srgb, var(--ink) 30%, var(--line));
   }
 
   .card.dragging {
@@ -151,14 +156,14 @@
 
   .text {
     min-width: 0;
-    padding-right: 26px;
+    padding-right: 22px;
   }
 
   .title {
     display: -webkit-box;
     overflow: hidden;
     font-size: 13.5px;
-    line-height: 1.2;
+    line-height: 1.25;
     line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -169,7 +174,7 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 6px;
-    margin-top: 4px;
+    margin-top: 6px;
     font-size: 12px;
     color: var(--dim);
     font-variant-numeric: tabular-nums;
@@ -217,6 +222,20 @@
     border-radius: var(--pill);
     background: transparent;
     color: var(--dim);
+  }
+
+  /* With a mouse, the menu button waits for hover so the titles read clean. */
+  @media (hover: hover) {
+    .more {
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .card:hover .more,
+    .card:focus-within .more,
+    .more[aria-expanded="true"] {
+      opacity: 1;
+    }
   }
 
   .more:hover,

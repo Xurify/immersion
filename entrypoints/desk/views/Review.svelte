@@ -110,9 +110,8 @@
         <span class="sr-only">{dueText}</span>
         <span class="due-items" aria-hidden="true">
           {#each dueByLang as item (item.lang)}
-            <span class="item"><i class="dot" style:background={langColor(item.lang)}></i>{item.count}</span>
+            <span class="item"><i class="dot" style:background={langColor(item.lang)}></i>{item.count} {englishName(item.lang)}</span>
           {/each}
-          due
         </span>
       </p>
     </div>
@@ -157,16 +156,16 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
     min-height: 0;
-    padding: 6px clamp(16px, 3vw, 40px) 32px;
+    padding: 16px var(--gutter) 48px;
   }
 
   .head {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
     gap: 6px 16px;
   }
 
@@ -188,7 +187,7 @@
     display: inline-flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 4px 14px;
+    gap: 4px 16px;
   }
 
   .item {

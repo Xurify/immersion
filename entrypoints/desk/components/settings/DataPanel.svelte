@@ -99,9 +99,9 @@
     </p>
     <div class="actions">
       <button type="button" class="btn small" disabled={busy} onclick={exportData}>Export</button>
-      <label class="import">
-        <span>Import a backup file</span>
-        <input type="file" accept="application/json,.json" disabled={busy} onchange={importFile} />
+      <label class="btn small ghost import" class:disabled={busy}>
+        Import a backup…
+        <input class="sr-only" type="file" accept="application/json,.json" disabled={busy} onchange={importFile} />
       </label>
     </div>
   </div>
@@ -147,8 +147,13 @@
   }
 
   .block {
-    padding: 18px 0;
-    border-bottom: 1px solid var(--line);
+    padding: 20px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .block .intro {
+    margin-bottom: 14px;
+    font-size: 14px;
   }
 
   .actions {
@@ -159,17 +164,17 @@
   }
 
   .import {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-    font-weight: 600;
+    cursor: pointer;
   }
 
-  .import input {
-    font-size: 14px;
-    font-weight: 400;
+  .import:focus-within {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .import.disabled {
+    opacity: 0.4;
+    cursor: default;
   }
 
   .btn.danger {

@@ -183,26 +183,28 @@
     <h1 class="sr-only">All videos</h1>
 
     <header class="top">
-      <div class="total">
-        {#if knownCount > 0}
-          <p class="big">{hoursClock(totalSeconds)}<span class="unit">h</span></p>
-        {:else if tabs.length}
-          <p class="reading-now">Reading video details…</p>
-        {/if}
-        <p class="dim">
-          in {tabs.length} open {tabs.length === 1 ? "tab" : "tabs"}{knownCount > 0 && loadingCount ? ` · + ${loadingCount} still loading` : ""}
-        </p>
-      </div>
+      {#if tabs.length}
+        <div class="total">
+          {#if knownCount > 0}
+            <p class="big">{hoursClock(totalSeconds)}<span class="unit">h</span></p>
+          {:else}
+            <p class="reading-now">Reading video details…</p>
+          {/if}
+          <p class="dim">
+            left in {tabs.length} open {tabs.length === 1 ? "tab" : "tabs"}{knownCount > 0 && loadingCount ? ` · ${loadingCount} still loading` : ""}
+          </p>
+        </div>
+      {/if}
 
       <div class="tools">
-        <div class="sources" role="group" aria-label="Show">
-          <button type="button" class="pill" aria-current={source === "open" ? "true" : undefined} onclick={() => setSource("open")}>
+        <div class="seg" role="group" aria-label="Show">
+          <button type="button" aria-current={source === "open" ? "true" : undefined} onclick={() => setSource("open")}>
             Open tabs <span class="count">{tabs.length}</span>
           </button>
-          <button type="button" class="pill" aria-current={source === "saved" ? "true" : undefined} onclick={() => setSource("saved")}>
+          <button type="button" aria-current={source === "saved" ? "true" : undefined} onclick={() => setSource("saved")}>
             Saved sessions <span class="count">{data.sessions.length}</span>
           </button>
-          <button type="button" class="pill" aria-current={source === "reading" ? "true" : undefined} onclick={() => setSource("reading")}>
+          <button type="button" aria-current={source === "reading" ? "true" : undefined} onclick={() => setSource("reading")}>
             Reading list
             {#if reading}<span class="count">{reading.length}</span>{/if}
           </button>
@@ -229,9 +231,9 @@
 
     {#if source === "open"}
       {#if !tabs.length}
-        <div class="empty">
-          <p class="empty-title">No YouTube videos open.</p>
-          <p class="dim">Open a video in a language you are learning and it appears here, sorted by language.</p>
+        <div class="empty-state">
+          <h2>No YouTube videos open</h2>
+          <p>Open a video in a language you are learning and it appears here, sorted by language.</p>
         </div>
       {:else if !groups.length}
         <p class="empty dim">No open videos match “{query}”.</p>
@@ -302,15 +304,15 @@
   .videos {
     display: flex;
     flex-direction: column;
-    gap: 18px;
-    padding: 14px clamp(16px, 3vw, 40px) 120px;
+    gap: 24px;
+    padding: 16px var(--gutter) 120px;
   }
 
   .top {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
-    gap: 16px 24px;
+    gap: 16px 32px;
   }
 
   .total {
@@ -339,8 +341,8 @@
   }
 
   .total p.dim {
-    margin: 0 0 6px;
-    font-size: 18px;
+    margin: 0 0 4px;
+    font-size: 17px;
   }
 
   .tools {
@@ -351,23 +353,9 @@
     margin-left: auto;
   }
 
-  .sources {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .sources .pill {
-    white-space: nowrap;
-  }
-
-  .sources .count {
-    color: inherit;
-    opacity: 0.7;
-  }
-
   .search {
-    width: 220px;
+    width: 240px;
+    min-height: 2.375rem;
     max-width: 100%;
   }
 
@@ -398,12 +386,6 @@
     margin: 0;
     padding: 28px 0;
     font-size: 16px;
-  }
-
-  .empty-title {
-    margin: 0 0 4px;
-    font-size: 20px;
-    font-weight: 700;
   }
 
   .problem {

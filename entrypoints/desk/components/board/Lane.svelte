@@ -45,7 +45,8 @@
 
 <section
   class="lane"
-  class:playing={lane === "playing"}
+  class:playing={lane === "playing" && rows.length > 0}
+  class:idle={lane === "playing" && rows.length === 0}
   class:targeted
   aria-labelledby="lane-{lane}"
   ondragover={(event) => onover(event, lane)}
@@ -87,17 +88,33 @@
   .lane {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
     min-width: 0;
     min-height: 0;
     padding: 12px;
-    border-radius: 16px;
+    border-radius: var(--r-lg);
     background: var(--soft);
   }
 
   .lane.playing {
     background: var(--ink);
     color: var(--on-ink);
+  }
+
+  /* Nothing playing: an open slot rather than a lit panel. */
+  .lane.idle {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--line);
+  }
+
+  .lane.idle .list {
+    justify-content: center;
+  }
+
+  .lane.idle .hint {
+    align-self: center;
+    max-width: 16em;
+    text-align: center;
   }
 
   .lane.targeted {
@@ -109,7 +126,8 @@
     align-items: baseline;
     justify-content: space-between;
     gap: 8px;
-    margin: 2px 4px 4px;
+    min-height: 24px;
+    margin: 4px 4px 0;
   }
 
   h3 {
@@ -158,9 +176,9 @@
   }
 
   .hint {
-    margin: 6px 4px;
+    margin: 4px 0;
     font-size: 13px;
-    line-height: 1.4;
+    line-height: 1.45;
     color: var(--dim);
   }
 

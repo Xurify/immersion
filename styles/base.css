@@ -22,6 +22,8 @@
   --danger: light-dark(#b3261e, #ff8a80);
   --shadow: light-dark(rgba(20, 19, 16, 0.18), rgba(0, 0, 0, 0.6));
 
+  --gutter: clamp(16px, 3vw, 40px);
+
   --r-sm: 6px;
   --r-md: 14px;
   --r-lg: 20px;
@@ -169,6 +171,12 @@ img {
   background: transparent;
   color: inherit;
   box-shadow: inset 0 0 0 1.5px currentColor;
+  transition: transform 0.12s ease, background-color 0.15s ease;
+}
+
+.btn.ghost:hover {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 10%, transparent);
 }
 
 .pill {
@@ -185,9 +193,76 @@ img {
   color: var(--ink);
 }
 
+.pill:hover {
+  border-color: color-mix(in srgb, var(--ink) 40%, var(--line));
+}
+
 .pill[aria-pressed="true"],
 .pill[aria-current="true"] {
   border-color: var(--ink);
+  background: var(--soft);
+}
+
+/* One choice out of a few: Week / Month / Quarter, theme, sources. */
+.seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--pill);
+  background: var(--soft);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 2rem;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--pill);
+  background: transparent;
+  color: var(--dim);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.seg button:hover {
+  color: var(--ink);
+}
+
+.seg button[aria-pressed="true"],
+.seg button[aria-current="true"] {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.seg .count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.65;
+}
+
+.empty-state {
+  max-width: 36rem;
+  padding: 40px 0;
+}
+
+.empty-state h2 {
+  margin: 0 0 10px;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-2);
 }
 
 .pill .count {

@@ -90,56 +90,63 @@
 
   <p class="text" lang={sentence.lang}>{sentence.text}</p>
 
-  <div class="reveal">
-    {#if revealed && hasTranslation}
-      <p class="translation">{sentence.translation}</p>
-    {:else if revealed}
-      <form class="add" onsubmit={submit}>
-        <label for="translation-input">Add a translation</label>
-        <div class="add-row">
-          <input id="translation-input" type="text" autocomplete="off" bind:value={draft} />
-          <button class="btn small light" type="submit" disabled={saving || draft.trim() === ""}>Save</button>
-        </div>
-        {#if saveError}
-          <p class="error" role="alert">{saveError}</p>
-        {/if}
-      </form>
-    {:else}
+  <div class="tools">
+    <button class="btn small ghost" type="button" aria-keyshortcuts="Space" onclick={onhear}>
+      <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path fill="currentColor" d="M2.5 1.2v9.6L10.5 6z" /></svg>
+      Hear it <span class="chip" aria-hidden="true">Space</span>
+    </button>
+    {#if !revealed}
       <button class="btn ghost small" type="button" onclick={() => (revealed = true)}>
         Show translation <span class="chip" aria-hidden="true">T</span>
       </button>
     {/if}
   </div>
 
+  {#if revealed}
+    <div class="reveal">
+      {#if hasTranslation}
+        <p class="translation">{sentence.translation}</p>
+      {:else}
+        <form class="add" onsubmit={submit}>
+          <label for="translation-input">Add a translation</label>
+          <div class="add-row">
+            <input id="translation-input" type="text" autocomplete="off" bind:value={draft} />
+            <button class="btn small light" type="submit" disabled={saving || draft.trim() === ""}>Save</button>
+          </div>
+          {#if saveError}
+            <p class="error" role="alert">{saveError}</p>
+          {/if}
+        </form>
+      {/if}
+    </div>
+  {/if}
+
   <footer class="actions">
-    <button class="btn ghost" type="button" aria-keyshortcuts="Space" onclick={onhear}>
-      <span aria-hidden="true">▶</span> Hear it
-    </button>
-    {#each GRADES as item (item.grade)}
-      <div class="grade">
-        <button
-          class="btn {item.grade === 'good' ? 'light' : 'ghost'}"
-          type="button"
-          aria-keyshortcuts={item.key}
-          aria-describedby="hint-{item.grade}"
-          disabled={busy}
-          onclick={() => ongrade(item.grade)}
-        >
-          {item.label}
-        </button>
-        <span class="hint" id="hint-{item.grade}">{hint(item.grade)}</span>
-      </div>
-    {/each}
-    <p class="keys">1 · 2 · 3 · Space replays</p>
+    <div class="grades">
+      {#each GRADES as item (item.grade)}
+        <div class="grade">
+          <button
+            class="btn {item.grade === 'good' ? 'light' : 'ghost'}"
+            type="button"
+            aria-keyshortcuts={item.key}
+            aria-describedby="hint-{item.grade}"
+            disabled={busy}
+            onclick={() => ongrade(item.grade)}
+          >
+            {item.label} <span class="chip" aria-hidden="true">{item.key}</span>
+          </button>
+          <span class="hint" id="hint-{item.grade}">{hint(item.grade)}</span>
+        </div>
+      {/each}
+    </div>
   </footer>
 </article>
 
 <style>
   .card {
-    flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 360px;
+    min-height: clamp(320px, 50vh, 480px);
     padding: clamp(24px, 4vw, 40px) clamp(24px, 4vw, 50px);
     border-radius: var(--r-lg);
     color: #fff;
@@ -166,12 +173,20 @@
   }
 
   .text {
-    margin: 26px 0 0;
-    max-width: 14em;
+    margin: 32px 0 0;
+    max-width: 16em;
+    text-wrap: balance;
     font-size: clamp(34px, 4.6vw, 60px);
     font-weight: 700;
     letter-spacing: -0.03em;
     line-height: 1.04;
+  }
+
+  .tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 24px;
   }
 
   .reveal {
@@ -218,12 +233,14 @@
   }
 
   .chip {
-    margin-left: 4px;
+    margin-left: 2px;
     padding: 0 5px;
     border: 1px solid currentColor;
     border-radius: 4px;
-    font-size: 12px;
-    opacity: 0.85;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.5;
+    opacity: 0.6;
   }
 
   .actions {
@@ -231,8 +248,14 @@
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
+    gap: 16px;
+    padding-top: 32px;
+  }
+
+  .grades {
+    display: flex;
+    flex-wrap: wrap;
     gap: 10px;
-    padding-top: 24px;
   }
 
   .grade {
@@ -248,10 +271,4 @@
     white-space: nowrap;
   }
 
-  .keys {
-    margin: 0 0 0 auto;
-    font-size: 14px;
-    opacity: 0.85;
-    white-space: nowrap;
-  }
 </style>

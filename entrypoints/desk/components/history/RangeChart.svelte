@@ -56,7 +56,7 @@
     {/each}
   </div>
   {#if goalSeconds > 0}
-    <p class="caption">Dashed line: all goals together, {Math.round(goalSeconds / 60)} min a day</p>
+    <p class="caption"><i class="key" aria-hidden="true"></i>Every goal together: {duration(goalSeconds)} a day</p>
   {/if}
 </div>
 
@@ -69,7 +69,7 @@
 
   .cols {
     position: relative;
-    height: 200px;
+    height: 220px;
     border-bottom: 1px solid var(--line);
   }
 
@@ -86,6 +86,11 @@
     height: 100%;
   }
 
+  .stack {
+    border-radius: 3px 3px 0 0;
+    overflow: hidden;
+  }
+
   .stack i {
     flex: none;
     display: block;
@@ -96,7 +101,7 @@
     position: absolute;
     left: 0;
     right: 0;
-    border-top: 1.5px dashed var(--dim);
+    border-top: 2px dashed color-mix(in srgb, var(--ink-2) 55%, transparent);
     pointer-events: none;
   }
 
@@ -121,8 +126,16 @@
   }
 
   .caption {
-    margin: 10px 0 0;
-    font-size: 12.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 0;
+    font-size: 13px;
     color: var(--dim);
+  }
+
+  .key {
+    width: 14px;
+    border-top: 2px dashed color-mix(in srgb, var(--ink-2) 55%, transparent);
   }
 </style>

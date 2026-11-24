@@ -496,7 +496,7 @@
       >
         {#snippet top()}
           {#if !data.playing}
-            <button class="btn" type="button" disabled={!lanes.next.length} onclick={playUpNext}>
+            <button class="btn play" type="button" disabled={!lanes.next.length} onclick={playUpNext}>
               {allNextSeconds ? `Play ${minutes(allNextSeconds)} min →` : "Play →"}
             </button>
           {/if}
@@ -587,17 +587,17 @@
   .board {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    height: calc(100vh - 76px);
+    gap: 20px;
+    height: calc(100vh - 68px);
     min-height: 560px;
-    padding: 12px clamp(16px, 3vw, 40px) 20px;
+    padding: 16px var(--gutter) 24px;
   }
 
   .top {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
-    gap: 14px 24px;
+    gap: 16px 32px;
   }
 
   .stat {
@@ -621,7 +621,7 @@
 
   .sentence {
     max-width: 30em;
-    margin: 8px 0 0;
+    margin: 10px 0 0;
     color: var(--ink-2);
     font-size: 16px;
     line-height: 1.35;
@@ -664,9 +664,10 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 12px 16px;
+    padding: 12px 12px 12px 20px;
     border-radius: var(--r-md);
     background: var(--soft);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
 
   .stash-text {
@@ -692,10 +693,14 @@
   .lanes {
     flex: 1;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 0.9fr) minmax(0, 0.8fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     grid-template-rows: minmax(0, 1fr);
     gap: 12px;
     min-height: 0;
+  }
+
+  .play {
+    flex: 1;
   }
 
   .inverse {

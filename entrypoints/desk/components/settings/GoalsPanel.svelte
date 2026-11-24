@@ -143,7 +143,7 @@
     grid-template-columns: 10px minmax(0, 1fr) auto auto auto;
     align-items: center;
     gap: 12px;
-    padding: 12px 0;
+    padding: 10px 0;
     border-bottom: 1px solid var(--line);
   }
 
@@ -163,17 +163,17 @@
   .stepper {
     display: inline-flex;
     align-items: center;
-    padding: 3px;
-    border: 1.5px solid var(--line);
+    padding: 2px;
     border-radius: var(--pill);
-    background: var(--raised);
+    background: var(--soft);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
 
   .stepper button {
     display: grid;
     place-items: center;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2rem;
+    height: 2rem;
     padding: 0;
     border: 0;
     border-radius: var(--pill);
@@ -185,7 +185,7 @@
   }
 
   .stepper button:hover:not(:disabled) {
-    background: var(--soft);
+    background: var(--raised);
   }
 
   .stepper button:disabled {
@@ -219,12 +219,23 @@
 
   .remove {
     min-height: 2.25rem;
-    padding: 0 0.9rem;
-    border: 1.5px solid var(--line);
+    padding: 0 0.75rem;
+    border: 0;
     border-radius: var(--pill);
     background: transparent;
+    color: var(--dim);
     font-size: 14px;
     font-weight: 600;
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .remove:hover {
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+    color: var(--danger);
+  }
+
+  .add {
+    margin-top: 8px;
   }
 
   .add label {
