@@ -137,11 +137,12 @@
     busy = true;
     message = "";
     try {
-      await browser.storage.local.remove(["log", "watched", "logBackground"]);
+      await browser.storage.local.remove(["log", "watched", "logBackground", "manual"]);
       data.youtubeLog = {};
       data.logBackground = {};
+      data.manual = [];
       data.watched = {};
-      message = "Listening history cleared. Goals and sentences are unchanged.";
+      message = "Listening history cleared, including time logged by hand. Goals and sentences are unchanged.";
     } catch {
       message = "Could not clear the history. Try again.";
     } finally {
@@ -202,7 +203,7 @@
 
   <div class="block">
     <h4>Listening history</h4>
-    <p class="intro">Removes the time counted for every language on every day. Goals and sentences stay.</p>
+    <p class="intro">Removes the time counted for every language on every day, including time logged by hand. Goals, hours before tracking and sentences stay.</p>
     {#if confirmingClear}
       <div class="actions">
         <button type="button" class="btn small danger" disabled={busy} onclick={clearLog}>Yes, clear all listening time</button>

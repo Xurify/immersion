@@ -22,7 +22,7 @@
   <div class="label">
     <span class="name"><LangName lang={row.lang} /></span>
     {#if row.done}
-      <small>{listened} of {row.goalMinutes} min today</small>
+      <small>{row.goalMinutes > 0 ? `${listened} of ${row.goalMinutes} min today` : "This week's goal is met"}</small>
     {:else if first}
       <small><span class="sr-only">Next: </span>{first.title}</small>
     {:else if reading}

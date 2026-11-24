@@ -39,8 +39,15 @@
     for (const key of summary.keys) for (const [lang, seconds] of Object.entries(data.logBackground[key] ?? {})) out[lang] = (out[lang] ?? 0) + seconds;
     return out;
   });
+  /** Seconds per language in the range from YouTube alone, the base for the watching share. */
+  const youtube = $derived.by(() => {
+    const out: Record<string, number> = {};
+    for (const key of summary.keys) for (const [lang, seconds] of Object.entries(data.youtubeLog[key] ?? {})) out[lang] = (out[lang] ?? 0) + seconds;
+    return out;
+  });
+  const youtubeTotal = $derived(summary.langs.reduce((sum, item) => sum + (youtube[item.lang] ?? 0), 0));
   const backgroundTotal = $derived(summary.langs.reduce((sum, item) => sum + (background[item.lang] ?? 0), 0));
-  const watchingShare = $derived(summary.totalSeconds > 0 ? Math.round(((summary.totalSeconds - backgroundTotal) / summary.totalSeconds) * 100) : 100);
+  const watchingShare = $derived(youtubeTotal > 0 ? Math.round(((youtubeTotal - backgroundTotal) / youtubeTotal) * 100) : 100);
   const tracksBackground = $derived(Object.keys(data.logBackground).length > 0);
   const recentManual = $derived([...data.manual].sort((a, b) => b.date.localeCompare(a.date) || b.addedAt - a.addedAt).slice(0, 20));
   let logging = $state(false);
@@ -83,7 +90,7 @@
             {#if trend !== 0}<span aria-hidden="true">{trend > 0 ? "▲" : "▼"}</span>{/if}
             {comparison}
           </span>
-          {#if tracksBackground && summary.totalSeconds > 0}
+          {#if tracksBackground && youtubeTotal >= 60}
             <span class="chip" title="Background means the tab was hidden while the video played">
               {watchingShare}% watching · {100 - watchingShare}% background
             </span>
@@ -145,6 +152,7 @@
         goals={pace}
         days={rangeDays}
         {background}
+        {youtube}
         baseline={data.baseline}
         showWatching={tracksBackground}
       />

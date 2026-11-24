@@ -12,6 +12,7 @@
     goals,
     days,
     background = {},
+    youtube = {},
     baseline = {},
     showWatching = false,
   }: {
@@ -23,6 +24,8 @@
     days: number;
     /** Seconds per language in the range that played in a hidden tab. */
     background?: Record<string, number>;
+    /** Seconds per language in the range from YouTube alone. */
+    youtube?: Record<string, number>;
     /** Seconds per language from before tracking began. */
     baseline?: Record<string, number>;
     /** Background time has been recorded at all, so a share means something. */
@@ -30,8 +33,9 @@
   } = $props();
 
   function watching(item: LangSummary): string {
-    if (!showWatching || item.seconds < 60) return "–";
-    return `${Math.round(((item.seconds - (background[item.lang] ?? 0)) / item.seconds) * 100)}%`;
+    const played = youtube[item.lang] ?? 0;
+    if (!showWatching || played < 60) return "–";
+    return `${Math.round(((played - (background[item.lang] ?? 0)) / played) * 100)}%`;
   }
 
   function milestone(item: LangSummary) {

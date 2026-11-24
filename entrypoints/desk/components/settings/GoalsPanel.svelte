@@ -86,6 +86,12 @@
 
   function remove(lang: string) {
     void write(Object.fromEntries(goalRows.filter(([key]) => key !== lang)));
+    if (data.goalPeriods[lang]) {
+      const periods = { ...data.goalPeriods };
+      delete periods[lang];
+      data.goalPeriods = periods;
+      void save("goalPeriods", periods);
+    }
   }
 
   function pickLanguage(lang: string) {
