@@ -1,0 +1,27 @@
+{
+  "name": "language-immersion-tracker",
+  "description": "Plan and track your language listening on YouTube.",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "bun test",
+    "postinstall": "wxt prepare"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.5",
+    "@wxt-dev/module-svelte": "^2.0.5",
+    "svelte": "^5.59.1",
+    "svelte-check": "^4.7.8",
+    "typescript": "^5.9.3",
+    "wxt": "^0.20.6"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource/fraunces": "^5.3.0"
+  }
+}

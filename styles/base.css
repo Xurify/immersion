@@ -1,0 +1,235 @@
+@import "@fontsource-variable/bricolage-grotesque/opsz.css";
+@import "@fontsource/fraunces/latin-500-italic.css";
+@import "@fontsource/fraunces/latin-600-italic.css";
+@import "@fontsource/fraunces/latin-ext-500-italic.css";
+@import "@fontsource/fraunces/latin-ext-600-italic.css";
+
+:root {
+  color-scheme: light dark;
+  --font-ui: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  /* Native language names only. CJK falls through to a system serif that has the glyphs. */
+  --font-name: "Fraunces", "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif CJK JP", "Songti SC", serif;
+
+  --bg: light-dark(#fbfaf7, #121110);
+  --raised: light-dark(#ffffff, #1b1a18);
+  --ink: light-dark(#141310, #f3f0e9);
+  --ink-2: light-dark(#3d3a33, #c9c4ba);
+  --dim: light-dark(#6e6a61, #9b968c);
+  --line: light-dark(#e7e3da, #2b2926);
+  --soft: light-dark(#f1eee6, #22211e);
+  --on-ink: light-dark(#ffffff, #121110);
+  --focus: light-dark(#2f45d8, #8fa0ff);
+  --danger: light-dark(#b3261e, #ff8a80);
+  --shadow: light-dark(rgba(20, 19, 16, 0.18), rgba(0, 0, 0, 0.6));
+
+  --r-sm: 6px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --pill: 999px;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-ui);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--focus) 28%, transparent);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── Shared pieces ── */
+
+/* Big tabular numbers: "38", "1:34", "4:12". */
+.big {
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+
+.big .unit {
+  font-size: 0.34em;
+  letter-spacing: -0.02em;
+  margin-left: 0.12em;
+}
+
+/* A language's own name in italic display serif. */
+.native {
+  font-family: var(--font-name);
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.native.cjk {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  min-height: 2.75rem;
+  padding: 0 1.4rem;
+  border: 0;
+  border-radius: var(--pill);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-weight: 700;
+  font-size: 16px;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.btn:hover {
+  opacity: 0.88;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  transform: none;
+}
+
+.btn.small {
+  min-height: 2.25rem;
+  padding: 0 1rem;
+  font-size: 14px;
+}
+
+/* On a coloured panel: white fill, panel-coloured text. */
+.btn.light {
+  background: #fff;
+  color: var(--panel, #141310);
+}
+
+.btn.ghost {
+  background: transparent;
+  color: inherit;
+  box-shadow: inset 0 0 0 1.5px currentColor;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  min-height: 2rem;
+  padding: 0 0.8rem;
+  border: 1.5px solid var(--line);
+  border-radius: var(--pill);
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.pill[aria-pressed="true"],
+.pill[aria-current="true"] {
+  border-color: var(--ink);
+}
+
+.pill .count {
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.dot {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.input {
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  border: 1.5px solid var(--line);
+  border-radius: var(--pill);
+  background: var(--raised);
+  font-size: 14px;
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--ink);
+}
+
+.dim {
+  color: var(--dim);
+}
+
+.kbd {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
