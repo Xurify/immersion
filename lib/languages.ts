@@ -62,3 +62,12 @@ export function baseLang(code: string | null | undefined): Lang | null {
 
 /** A starter list for the goal picker. */
 export const COMMON_LANGS: Lang[] = ["es", "fr", "de", "it", "pt", "ja", "ko", "zh", "ru", "sk", "cs", "pl", "nl", "sv", "et", "fi", "uk", "tr", "ar", "hi", "en"];
+
+/** ISO 639-1 codes the pickers offer; names come from Intl.DisplayNames. */
+export const ALL_LANGS: Lang[] = [
+  "af", "am", "ar", "az", "be", "bg", "bn", "bs", "ca", "cs", "cy", "da", "de", "el", "en", "eo", "es", "et", "eu", "fa",
+  "fi", "fil", "fr", "ga", "gl", "gu", "he", "hi", "hr", "ht", "hu", "hy", "id", "is", "it", "ja", "jv", "ka", "kk", "km",
+  "kn", "ko", "ku", "ky", "la", "lb", "lo", "lt", "lv", "mi", "mk", "ml", "mn", "mr", "ms", "mt", "my", "ne", "nl", "no",
+  "pa", "pl", "ps", "pt", "ro", "ru", "si", "sk", "sl", "so", "sq", "sr", "sv", "sw", "ta", "te", "tg", "th", "tk", "tr",
+  "uk", "ur", "uz", "vi", "yi", "yo", "zh", "zu",
+];
