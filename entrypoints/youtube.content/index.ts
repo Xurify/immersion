@@ -17,6 +17,8 @@ const CAPTION_LEAD_S = 3;
 const CLIP_PAD_S = 0.5;
 /** A seek can land on a keyframe a little before its target. */
 const CLIP_SEEK_SLACK_S = 2;
+/** Shorts loop instead of ending: a jump from this close to the end back to this close to the start is one full watch. */
+const LOOP_EDGE_S = 1.5;
 
 export default defineContentScript({
   matches: ["https://www.youtube.com/*"],
@@ -31,6 +33,8 @@ export default defineContentScript({
     let clip: { start: number; end: number } | null = null;
     let captionText = "";
     let captionStart: number | null = null;
+    let endedFor: string | null = null;
+    let lastTime = 0;
 
     const currentVideoId = () => videoIdOf(location.href);
 
@@ -58,6 +62,7 @@ export default defineContentScript({
       found.addEventListener("pause", tick);
       found.addEventListener("ended", onEnded);
       found.addEventListener("timeupdate", endClipIfDone);
+      found.addEventListener("timeupdate", catchLoop);
       found.addEventListener("seeked", dropClipIfSeekAway);
     }
 
@@ -68,9 +73,20 @@ export default defineContentScript({
       report("yt:tick", { videoId, position: video.currentTime, playing: !video.paused && !video.ended });
     }
 
+    /** Reported once per video, whether it ended or looped. */
     function onEnded() {
       const videoId = currentVideoId();
-      if (videoId) report("yt:ended", { videoId });
+      if (!videoId || endedFor === videoId) return;
+      endedFor = videoId;
+      report("yt:ended", { videoId });
+    }
+
+    function catchLoop() {
+      if (!video) return;
+      const now = video.currentTime;
+      const length = video.duration;
+      if (Number.isFinite(length) && length > LOOP_EDGE_S * 2 && lastTime >= length - LOOP_EDGE_S && now <= LOOP_EDGE_S) onEnded();
+      lastTime = now;
     }
 
     function readMeta(videoId: string, tries = 0) {
@@ -85,6 +101,7 @@ export default defineContentScript({
       if (!alive) return;
       meta = null;
       reportedFor = null;
+      lastTime = 0;
       attachVideo();
       const videoId = currentVideoId();
       if (videoId) readMeta(videoId);
