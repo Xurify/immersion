@@ -3,7 +3,7 @@
   import { dateKey } from "../../../../lib/format";
   import { send } from "../../../../lib/messages";
 
-  const KNOWN_KEYS = ["goals", "log", "sentences", "sessions", "meta", "overrides", "watched"] as const;
+  const KNOWN_KEYS = ["goals", "log", "sentences", "sessions", "meta", "overrides", "watched", "board"] as const;
   type Known = (typeof KNOWN_KEYS)[number];
 
   let message = $state("");
@@ -112,7 +112,7 @@
   <div class="block">
     <h4>Backup</h4>
     <p class="intro">
-      Export includes goals, listening history, sentences, sessions and video overrides. Import reads a file made by Export and replaces the sections it contains. Sections missing from the file stay as they are.
+      Export includes goals, listening history, the board, sentences, sessions and video overrides. Import reads a file made by Export and replaces the sections it contains. Sections missing from the file stay as they are.
     </p>
     <div class="actions">
       <button type="button" class="btn small" disabled={busy} onclick={exportData}>Export</button>
