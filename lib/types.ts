@@ -91,3 +91,18 @@ export interface Overrides {
   videos: Record<string, Lang>;
   channels: Record<string, Lang>;
 }
+
+/** A daily goal counts minutes each day; a weekly one, minutes from Monday to Sunday. */
+export type GoalPeriod = "day" | "week";
+
+/** Listening logged by hand: podcasts, audiobooks, a tutor, anything off YouTube. */
+export interface ManualEntry {
+  id: string;
+  /** dateKey of the day it counts for. */
+  date: string;
+  lang: Lang;
+  seconds: number;
+  /** "Podcast", "Audiobook", "TV", "Tutor" or "Other". */
+  source: string;
+  addedAt: number;
+}

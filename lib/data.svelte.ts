@@ -4,7 +4,8 @@ import { progressToday, type LangProgress } from "./plan";
 import { setGoalLanguages } from "./colors.svelte";
 import { emptyBoard, pruneDone, type Board } from "./board";
 import { load, loadSession, watch, type SessionShape } from "./storage";
-import type { Goals, ListenLog, OpenVideo, Sentence, Session } from "./types";
+import { goalsForToday, withManual } from "./stats";
+import type { GoalPeriod, Goals, ListenLog, ManualEntry, OpenVideo, Sentence, Session } from "./types";
 
 /**
  * Live data shared by every view on a page. Call `start()` once from the page's root;
@@ -13,7 +14,14 @@ import type { Goals, ListenLog, OpenVideo, Sentence, Session } from "./types";
 class Data {
   tabs = $state<OpenVideo[]>([]);
   goals = $state<Goals>({});
-  log = $state<ListenLog>({});
+  /** Time counted from YouTube alone. */
+  youtubeLog = $state<ListenLog>({});
+  logBackground = $state<ListenLog>({});
+  manual = $state<ManualEntry[]>([]);
+  baseline = $state<Record<string, number>>({});
+  goalPeriods = $state<Record<string, GoalPeriod>>({});
+  /** Everything listened: YouTube plus hand-logged entries. */
+  log = $derived(withManual(this.youtubeLog, this.manual));
   sentences = $state<Sentence[]>([]);
   sessions = $state<Session[]>([]);
   /** videoId → seconds actually played. */
@@ -24,7 +32,9 @@ class Data {
   loaded = $state(false);
 
   today = $derived(this.log[dateKey()] ?? {});
-  progress = $derived<LangProgress[]>(progressToday(this.goals, this.today));
+  /** Minutes each goal asks for today; weekly goals spread what is left of the week. */
+  todayGoals = $derived(goalsForToday(this.goals, this.goalPeriods, this.log));
+  progress = $derived<LangProgress[]>(progressToday(this.todayGoals, this.today));
   /** Seconds left across all goals. */
   leftToday = $derived(this.progress.reduce((sum, row) => sum + row.leftSeconds, 0));
 
@@ -39,7 +49,7 @@ class Data {
   }
 
   async refreshStored(): Promise<void> {
-    const [goals, log, sentences, sessions, board, playing, watched] = await Promise.all([
+    const [goals, log, sentences, sessions, board, playing, watched, logBackground, manual, baseline, goalPeriods] = await Promise.all([
       load("goals"),
       load("log"),
       load("sentences"),
@@ -47,13 +57,21 @@ class Data {
       load("board"),
       loadSession("playing"),
       load("watched"),
+      load("logBackground"),
+      load("manual"),
+      load("baseline"),
+      load("goalPeriods"),
     ]);
+    this.logBackground = logBackground;
+    this.manual = manual;
+    this.baseline = baseline;
+    this.goalPeriods = goalPeriods;
     this.watched = watched;
     this.board = pruneDone(board);
     this.playing = playing;
     setGoalLanguages(Object.keys(goals));
     this.goals = goals;
-    this.log = log;
+    this.youtubeLog = log;
     this.sentences = sentences;
     this.sessions = sessions;
   }
@@ -63,7 +81,7 @@ class Data {
     this.#started = true;
     await Promise.all([this.refreshStored(), this.refreshTabs()]);
     this.loaded = true;
-    watch(["goals", "log", "sentences", "sessions", "meta", "overrides", "board", "watched"], () => {
+    watch(["goals", "log", "sentences", "sessions", "meta", "overrides", "board", "watched", "logBackground", "manual", "baseline", "goalPeriods"], () => {
       void this.refreshStored();
       void this.refreshTabs();
     });

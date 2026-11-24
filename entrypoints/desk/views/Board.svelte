@@ -52,7 +52,7 @@
 
   const board = $derived(optimistic ?? data.board);
   const lanes = $derived(buildLanes(board, data.tabs, data.playing?.videoId ?? null, data.watched));
-  const goals = $derived(data.progress.filter((row) => row.goalMinutes > 0));
+  const goals = $derived(data.progress.filter((row) => row.isGoal));
   const goalLangs = $derived(Object.keys(data.goals));
   const activeFilter = $derived(filter && goals.some((row) => row.lang === filter) ? filter : null);
   const shownRows = $derived.by(() => {
@@ -440,7 +440,7 @@
         <div class="chips" class:filtering={activeFilter !== null} role="group" aria-label="Filter by language">
           <button class="goal all" type="button" aria-pressed={activeFilter === null} onclick={() => (filter = null)}>All</button>
           {#each goals as row (row.lang)}
-            {@const share = Math.min(100, Math.round((1 - row.leftSeconds / (row.goalMinutes * 60)) * 100))}
+            {@const share = row.goalMinutes > 0 ? Math.min(100, Math.round((1 - row.leftSeconds / (row.goalMinutes * 60)) * 100)) : 100}
             <button
               class="goal"
               type="button"

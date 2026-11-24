@@ -2,11 +2,12 @@
   import { data } from "../../../lib/data.svelte";
   import { duration, hoursClock } from "../../../lib/format";
   import { englishName } from "../../../lib/languages";
-  import { onlyLangs, otherLangs, summarise } from "../../../lib/stats";
+  import { dailyPace, onlyLangs, otherLangs, summarise } from "../../../lib/stats";
   import { langColor } from "../../../lib/colors.svelte";
   import { save } from "../../../lib/storage";
   import LangName from "../../../ui/LangName.svelte";
   import LangPanels from "../components/history/LangPanels.svelte";
+  import LogTime from "../components/history/LogTime.svelte";
   import RangeChart from "../components/history/RangeChart.svelte";
   import WeekChart from "../components/history/WeekChart.svelte";
 
@@ -26,10 +27,23 @@
   const hasGoals = $derived(goalLangs.length > 0);
   // With goals set, History is about those languages; anything else YouTube played is listed on its own.
   const tracked = $derived(hasGoals ? onlyLangs(data.log, goalLangs) : data.log);
-  const summary = $derived(summarise(tracked, data.goals, rangeDays));
-  const calendar = $derived(summarise(tracked, data.goals, 28));
+  // Weekly goals count an even seventh each day here, so goal days and the goal line stay comparable.
+  const pace = $derived(dailyPace(data.goals, data.goalPeriods));
+  const summary = $derived(summarise(tracked, pace, rangeDays));
+  const calendar = $derived(summarise(tracked, pace, 28));
   const others = $derived(hasGoals ? otherLangs(data.log, goalLangs, summary.keys) : []);
-  const goalSeconds = $derived(Object.values(data.goals).reduce((sum, minutes) => sum + minutes * 60, 0));
+  const goalSeconds = $derived(Object.values(pace).reduce((sum, minutes) => sum + minutes * 60, 0));
+  /** Seconds per language in the range that played in a hidden tab. */
+  const background = $derived.by(() => {
+    const out: Record<string, number> = {};
+    for (const key of summary.keys) for (const [lang, seconds] of Object.entries(data.logBackground[key] ?? {})) out[lang] = (out[lang] ?? 0) + seconds;
+    return out;
+  });
+  const backgroundTotal = $derived(summary.langs.reduce((sum, item) => sum + (background[item.lang] ?? 0), 0));
+  const watchingShare = $derived(summary.totalSeconds > 0 ? Math.round(((summary.totalSeconds - backgroundTotal) / summary.totalSeconds) * 100) : 100);
+  const tracksBackground = $derived(Object.keys(data.logBackground).length > 0);
+  const recentManual = $derived([...data.manual].sort((a, b) => b.date.localeCompare(a.date) || b.addedAt - a.addedAt).slice(0, 20));
+  let logging = $state(false);
   const hasListening = $derived(Object.values(data.log).some((day) => Object.values(day).some((seconds) => seconds > 0)));
 
   const diff = $derived(summary.totalSeconds - summary.previousSeconds);
@@ -39,6 +53,17 @@
     return `${duration(Math.abs(diff))} ${diff > 0 ? "more" : "less"} than the ${range.period} before`;
   });
   const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
+
+  async function removeManual(id: string) {
+    const next = data.manual.filter((entry) => entry.id !== id);
+    data.manual = next;
+    await save("manual", next);
+  }
+
+  function dayName(key: string): string {
+    const [year, month, date] = key.split("-").map(Number) as [number, number, number];
+    return new Date(year, month - 1, date).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+  }
 
   async function addGoal(lang: string) {
     const next = { ...data.goals, [lang]: NEW_GOAL_MINUTES };
@@ -58,6 +83,11 @@
             {#if trend !== 0}<span aria-hidden="true">{trend > 0 ? "▲" : "▼"}</span>{/if}
             {comparison}
           </span>
+          {#if tracksBackground && summary.totalSeconds > 0}
+            <span class="chip" title="Background means the tab was hidden while the video played">
+              {watchingShare}% watching · {100 - watchingShare}% background
+            </span>
+          {/if}
           {#if hasGoals}
             <span class="chip">{summary.allGoalsDays ? `Every goal hit on ${plural(summary.allGoalsDays, "day")}` : "No day with every goal hit yet"}</span>
           {/if}
@@ -72,9 +102,14 @@
           </button>
         {/each}
       </div>
+      <button type="button" class="btn small ghost" aria-expanded={logging} onclick={() => (logging = !logging)}>+ Log time</button>
       <button type="button" class="btn small ghost" onclick={onsettings}>Edit goals</button>
     </div>
   </header>
+
+  {#if logging}
+    <LogTime onclose={() => (logging = false)} />
+  {/if}
 
   {#if !hasListening}
     <div class="empty-state">
@@ -104,8 +139,35 @@
 
     <section class="block" aria-labelledby="langs-title">
       <h2 id="langs-title" class="section-title">By language</h2>
-      <LangPanels langs={summary.langs} calendar={calendar.langs} goals={data.goals} days={rangeDays} />
+      <LangPanels
+        langs={summary.langs}
+        calendar={calendar.langs}
+        goals={pace}
+        days={rangeDays}
+        {background}
+        baseline={data.baseline}
+        showWatching={tracksBackground}
+      />
     </section>
+
+    {#if recentManual.length}
+      <section class="block" aria-labelledby="manual-title">
+        <h2 id="manual-title" class="section-title">Logged by hand</h2>
+        <ul class="manual">
+          {#each recentManual as entry (entry.id)}
+            <li>
+              <i class="dot" style:background={langColor(entry.lang)} aria-hidden="true"></i>
+              <LangName lang={entry.lang} />
+              <span class="time">{duration(entry.seconds)}</span>
+              <span class="where">{entry.source} · {dayName(entry.date)}</span>
+              <button type="button" class="remove" aria-label="Delete {duration(entry.seconds)} of {englishName(entry.lang)} on {dayName(entry.date)}" onclick={() => removeManual(entry.id)}>
+                Delete
+              </button>
+            </li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
 
     {#if others.length}
       <section class="block" aria-labelledby="others-title">
@@ -233,6 +295,58 @@
     align-items: center;
     gap: 8px;
     font-size: 16px;
+  }
+
+  .manual {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    list-style: none;
+    border-radius: var(--r-lg);
+    background: var(--raised);
+    box-shadow: var(--lift);
+  }
+
+  .manual li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 3.25rem;
+    padding: 0 8px 0 18px;
+    font-size: 14px;
+  }
+
+  .manual li + li {
+    border-top: 1px solid var(--line);
+  }
+
+  .manual li :global(.native) {
+    font-size: 18px;
+  }
+
+  .where {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--dim);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .remove {
+    min-height: 2.25rem;
+    padding: 0 12px;
+    border: 0;
+    border-radius: var(--pill);
+    background: transparent;
+    color: var(--dim);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .remove:hover {
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+    color: var(--danger);
   }
 
   .others {

@@ -15,6 +15,9 @@ import { advanceSession, dropFromSession, startSession } from "../lib/engine/ses
 import { backToNext, fillCard, finishCard, placeCard, refreshCard, startCard, stashTargets, type Playing } from "../lib/engine/cards";
 import { buildOpenVideos, resolveLang } from "../lib/engine/tabs";
 import type { OpenVideo, ReadingItem, VideoMeta } from "../lib/types";
+import { assignGoalColors, baseColor } from "../lib/languages";
+import { goalsForToday, withManual } from "../lib/stats";
+import { progressToday } from "../lib/plan";
 
 type Sender = Browser.runtime.MessageSender;
 type Handler<K extends RequestKey> = (payload: Requests[K]["req"], sender: Sender) => Promise<Requests[K]["res"]>;
@@ -66,6 +69,45 @@ async function saveFound(found: VideoMeta[]): Promise<void> {
 }
 
 const enrich = createEnrich(saveFound);
+
+/** How long after the last counted tick the badge keeps showing the language being counted. */
+const COUNTING_MS = 12_000;
+let counting: { lang: string; until: number } | null = null;
+let badgeShown = "";
+
+/**
+ * The toolbar badge: the language being counted right now, in its colour, so a
+ * wrong guess (Czech for Slovak) shows at a glance; otherwise minutes left today, or ✓.
+ */
+async function refreshBadge(): Promise<void> {
+  const [goals, periods, log, manual] = await Promise.all([load("goals"), load("goalPeriods"), load("log"), load("manual")]);
+  const colors = assignGoalColors(Object.keys(goals));
+  let text = "";
+  let color = "#3d3a33";
+  if (counting && Date.now() < counting.until) {
+    text = counting.lang.toUpperCase().slice(0, 3);
+    color = colors[counting.lang] ?? baseColor(counting.lang);
+  } else if (Object.keys(goals).length) {
+    const all = withManual(log, manual);
+    const progress = progressToday(goalsForToday(goals, periods, all), all[dateKey()]);
+    const left = progress.reduce((sum, row) => sum + row.leftSeconds, 0);
+    text = left > 0 ? String(Math.ceil(left / 60 - 0.01)) : "✓";
+    color = left > 0 ? "#3d3a33" : "#1d7a4c";
+  }
+  const shown = `${text}|${color}`;
+  if (shown === badgeShown) return;
+  badgeShown = shown;
+  await browser.action.setBadgeText({ text });
+  if (text) {
+    await browser.action.setBadgeBackgroundColor({ color });
+    await browser.action.setBadgeTextColor?.({ color: "#ffffff" });
+  }
+}
+
+browser.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && ["goals", "goalPeriods", "manual"].some((key) => key in changes)) void refreshBadge();
+});
+void refreshBadge();
 
 /** Open tabs and board cards still missing a length or language. */
 async function missingDetails(videos: OpenVideo[]) {
@@ -344,7 +386,7 @@ const handlers: { [K in RequestKey]: Handler<K> } = {
       if (updated !== board) await writeBoard(updated);
     }),
 
-  "yt:tick": ({ videoId, position, playing }, sender) =>
+  "yt:tick": ({ videoId, position, playing, watching }, sender) =>
     serial(async () => {
       const tabId = sender.tab?.id;
       if (tabId === undefined) return;
@@ -374,6 +416,16 @@ const handlers: { [K in RequestKey]: Handler<K> } = {
       day[lang] = (day[lang] ?? 0) + seconds;
       log[dateKey()] = day;
       await save("log", log);
+      if (watching === false) {
+        const background = await load("logBackground");
+        const backgroundDay = background[dateKey()] ?? {};
+        backgroundDay[lang] = (backgroundDay[lang] ?? 0) + seconds;
+        background[dateKey()] = backgroundDay;
+        await save("logBackground", background);
+      }
+      counting = { lang, until: Date.now() + COUNTING_MS };
+      await refreshBadge();
+      setTimeout(() => void refreshBadge(), COUNTING_MS + 500);
     }),
 
   "yt:ended": ({ videoId }, sender) =>

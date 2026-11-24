@@ -3,7 +3,7 @@
   import { dateKey } from "../../../../lib/format";
   import { send } from "../../../../lib/messages";
 
-  const KNOWN_KEYS = ["goals", "log", "sentences", "sessions", "meta", "overrides", "watched", "board"] as const;
+  const KNOWN_KEYS = ["goals", "log", "sentences", "sessions", "meta", "overrides", "watched", "board", "logBackground", "manual", "baseline", "goalPeriods"] as const;
   type Known = (typeof KNOWN_KEYS)[number];
 
   let message = $state("");
@@ -28,7 +28,7 @@
   const isPlainObject = (value: unknown): boolean => typeof value === "object" && value !== null && !Array.isArray(value);
 
   function isValid(key: Known, value: unknown): boolean {
-    return key === "sentences" || key === "sessions" ? Array.isArray(value) : isPlainObject(value);
+    return key === "sentences" || key === "sessions" || key === "manual" ? Array.isArray(value) : isPlainObject(value);
   }
 
   async function exportData() {
@@ -92,8 +92,9 @@
     busy = true;
     message = "";
     try {
-      await browser.storage.local.remove(["log", "watched"]);
-      data.log = {};
+      await browser.storage.local.remove(["log", "watched", "logBackground"]);
+      data.youtubeLog = {};
+      data.logBackground = {};
       data.watched = {};
       message = "Listening history cleared. Goals and sentences are unchanged.";
     } catch {

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { interleave, planSession, progressToday } from "../lib/plan";
 import { dueLabel, grade, nextDueAt } from "../lib/review";
-import { onlyLangs, otherLangs, summarise } from "../lib/stats";
+import { dailyPace, goalsForToday, milestoneAround, onlyLangs, otherLangs, summarise, withManual } from "../lib/stats";
 import type { OpenVideo, Sentence } from "../lib/types";
 
 const video = (tabId: number, lang: string, remaining: number): OpenVideo => ({
@@ -62,4 +62,29 @@ test("History keeps goal languages and lists the rest apart", () => {
   expect(onlyLangs(log, ["sk"])).toEqual({ "2026-11-23": { sk: 600 }, "2026-11-24": { sk: 300 } });
   expect(otherLangs(log, ["sk"], ["2026-11-23", "2026-11-24"])).toEqual([{ lang: "en", seconds: 3180 }]);
   expect(otherLangs(log, ["sk"], ["2026-11-24"])).toEqual([{ lang: "en", seconds: 60 }]);
+});
+
+test("A weekly goal spreads what is left of the week over the days left", () => {
+  // Thursday 2026-11-26: Monday to Wednesday are before today, so 4 days are left.
+  const now = new Date(2026, 10, 26, 12).getTime();
+  const log = { "2026-11-23": { et: 1800 }, "2026-11-24": { et: 1800 }, "2026-11-22": { et: 9999 } };
+  const today = goalsForToday({ et: 140, sk: 20 }, { et: "week" }, log, now);
+  expect(today.sk).toBe(20);
+  expect(today.et).toBe(20); // (140 - 60) / 4
+  expect(goalsForToday({ et: 60 }, { et: "week" }, log, now).et).toBe(0);
+  expect(dailyPace({ et: 140, sk: 20 }, { et: "week" })).toEqual({ et: 20, sk: 20 });
+});
+
+test("Hand-logged time adds to the day it was logged for", () => {
+  const merged = withManual({ "2026-11-24": { sk: 600 } }, [
+    { id: "a", date: "2026-11-24", lang: "sk", seconds: 1200, source: "Podcast", addedAt: 0 },
+    { id: "b", date: "2026-11-23", lang: "cs", seconds: 300, source: "TV", addedAt: 0 },
+  ]);
+  expect(merged).toEqual({ "2026-11-24": { sk: 1800 }, "2026-11-23": { cs: 300 } });
+});
+
+test("Milestones bracket the hours listened", () => {
+  expect(milestoneAround(0)).toEqual({ previous: 0, next: 10 });
+  expect(milestoneAround(12.5)).toEqual({ previous: 10, next: 25 });
+  expect(milestoneAround(100)).toEqual({ previous: 100, next: 150 });
 });

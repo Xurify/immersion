@@ -1,5 +1,6 @@
 <script lang="ts">
   import { hoursClock } from "../../../../lib/format";
+  import { milestoneAround } from "../../../../lib/stats";
   import { langColor } from "../../../../lib/colors.svelte";
   import type { DayStatus, LangSummary } from "../../../../lib/stats";
   import type { Goals } from "../../../../lib/types";
@@ -10,6 +11,9 @@
     calendar,
     goals,
     days,
+    background = {},
+    baseline = {},
+    showWatching = false,
   }: {
     /** Per language for the chosen range. */
     langs: LangSummary[];
@@ -17,14 +21,28 @@
     calendar: LangSummary[];
     goals: Goals;
     days: number;
+    /** Seconds per language in the range that played in a hidden tab. */
+    background?: Record<string, number>;
+    /** Seconds per language from before tracking began. */
+    baseline?: Record<string, number>;
+    /** Background time has been recorded at all, so a share means something. */
+    showWatching?: boolean;
   } = $props();
 
-  const calendarByLang = $derived(new Map<string, DayStatus[]>(calendar.map((item) => [item.lang, item.days])));
-
-  function total(seconds: number): string {
-    if (seconds < 3600) return `${Math.round(seconds / 60)} min`;
-    return `${Math.round((seconds / 3600) * 10) / 10} h`;
+  function watching(item: LangSummary): string {
+    if (!showWatching || item.seconds < 60) return "–";
+    return `${Math.round(((item.seconds - (background[item.lang] ?? 0)) / item.seconds) * 100)}%`;
   }
+
+  function milestone(item: LangSummary) {
+    const hours = (item.allTime + (baseline[item.lang] ?? 0)) / 3600;
+    const { previous, next } = milestoneAround(hours);
+    return { hours, next, percent: Math.min(100, ((hours - previous) / (next - previous)) * 100) };
+  }
+
+  const hoursText = (hours: number) => (hours < 10 ? hours.toFixed(1) : String(Math.floor(hours)));
+
+  const calendarByLang = $derived(new Map<string, DayStatus[]>(calendar.map((item) => [item.lang, item.days])));
 
   function goalText(item: LangSummary): string {
     if (!(item.lang in goals)) return "No goal";
@@ -49,6 +67,7 @@
   {#each langs as item (item.lang)}
     {@const statuses = calendarByLang.get(item.lang) ?? []}
     {@const share = goalShare(item)}
+    {@const mark = milestone(item)}
     <article class="panel" class:quiet={item.seconds === 0} style:--c={langColor(item.lang)}>
       <div class="head">
         <h3 class="name"><LangName lang={item.lang} /></h3>
@@ -67,8 +86,18 @@
       <dl class="facts">
         <div><dt>Goal days</dt><dd>{goalText(item)}</dd></div>
         <div><dt>Streak</dt><dd>{item.streak ? `${item.streak} ${item.streak === 1 ? "day" : "days"}` : "–"}</dd></div>
-        <div><dt>All time</dt><dd>{total(item.allTime)}</dd></div>
+        <div><dt>Watching</dt><dd>{watching(item)}</dd></div>
       </dl>
+
+      <div class="milestone">
+        <div class="milestone-top">
+          <span><b>{hoursText(mark.hours)} h</b> all time</span>
+          <span>next {mark.next} h</span>
+        </div>
+        <div class="meter thin" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(mark.percent)} aria-label="Progress to {mark.next} hours">
+          <i style:width="{mark.percent}%"></i>
+        </div>
+      </div>
 
       <div class="strip">
         <div class="cells" role="img" aria-label={calendarLabel(statuses)}>
@@ -186,6 +215,28 @@
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+  }
+
+  .milestone {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .milestone-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .milestone-top b {
+    font-size: 14px;
+  }
+
+  .meter.thin {
+    height: 4px;
   }
 
   .cells {

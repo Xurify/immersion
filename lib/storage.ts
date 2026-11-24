@@ -1,5 +1,5 @@
 import type { Board } from "./board";
-import type { ActiveSession, Goals, ListenLog, Overrides, Sentence, Session, VideoMeta } from "./types";
+import type { ActiveSession, GoalPeriod, Goals, ListenLog, ManualEntry, Overrides, Sentence, Session, VideoMeta } from "./types";
 
 /** Every persisted value, in browser.storage.local unless noted. */
 export interface StorageShape {
@@ -13,6 +13,13 @@ export interface StorageShape {
   board: Board;
   /** videoId → seconds actually played, counted the same way as the listening log. */
   watched: Record<string, number>;
+  /** Seconds from `log` that played while the tab was hidden: background listening. */
+  logBackground: ListenLog;
+  manual: ManualEntry[];
+  /** Seconds per language listened before tracking began, added to all-time totals. */
+  baseline: Record<string, number>;
+  /** Languages missing here have daily goals. */
+  goalPeriods: Record<string, GoalPeriod>;
 }
 
 /** Lives in browser.storage.session: gone when the browser closes. */
@@ -33,6 +40,10 @@ export const DEFAULTS: StorageShape = {
   overrides: { videos: {}, channels: {} },
   board: { cards: {}, columns: { inbox: [], next: [], done: [], later: [] } },
   watched: {},
+  logBackground: {},
+  manual: [],
+  baseline: {},
+  goalPeriods: {},
 };
 
 export async function load<K extends keyof StorageShape>(key: K): Promise<StorageShape[K]> {

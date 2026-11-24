@@ -19,7 +19,7 @@
   let error = $state("");
   let retrying = $state(false);
 
-  const goalRows = $derived(data.progress.filter((row) => row.goalMinutes > 0));
+  const goalRows = $derived(data.progress.filter((row) => row.isGoal));
   const hasGoals = $derived(goalRows.length > 0);
   const allMet = $derived(hasGoals && goalRows.every((row) => row.done));
   /** Board cards (Up next, then Inbox) and open tabs not on the board yet: what the popup can plan from after tabs are stashed. */
@@ -44,8 +44,8 @@
   const meter = $derived(
     goalRows.map((row) => ({
       lang: row.lang,
-      weight: row.goalMinutes,
-      percent: Math.min(100, (row.listenedSeconds / (row.goalMinutes * 60)) * 100),
+      weight: Math.max(row.goalMinutes, 1),
+      percent: row.goalMinutes > 0 ? Math.min(100, (row.listenedSeconds / (row.goalMinutes * 60)) * 100) : 100,
     })),
   );
   const thisTabKnown = $derived(Boolean(thisTab && thisTab.duration > 0));

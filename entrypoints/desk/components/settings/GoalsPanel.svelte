@@ -18,7 +18,46 @@
   const goalLangs = $derived(Object.keys(data.goals));
   const suggested = $derived(COMMON_LANGS.filter((lang) => !(lang in data.goals)));
 
-  const clamp = (minutes: number) => Math.min(MAX_MINUTES, Math.max(MIN_MINUTES, Math.round(minutes)));
+  const isWeekly = (lang: string) => data.goalPeriods[lang] === "week";
+  const stepFor = (lang: string) => (isWeekly(lang) ? STEP * 3 : STEP);
+  const maxFor = (lang: string) => (isWeekly(lang) ? MAX_MINUTES * 7 : MAX_MINUTES);
+  const clampFor = (lang: string, minutes: number) => Math.min(maxFor(lang), Math.max(MIN_MINUTES, Math.round(minutes)));
+
+  /** Switching keeps the same pace: 20 min a day becomes 140 a week, rounded to 5. */
+  async function setPeriod(lang: string, period: "day" | "week") {
+    if ((data.goalPeriods[lang] ?? "day") === period) return;
+    const minutes = data.goals[lang] ?? DEFAULT_MINUTES;
+    const converted = Math.max(MIN_MINUTES, Math.round((period === "week" ? minutes * 7 : minutes / 7) / 5) * 5);
+    const periods = { ...data.goalPeriods, [lang]: period };
+    if (period === "day") delete periods[lang];
+    error = "";
+    try {
+      data.goalPeriods = periods;
+      await save("goalPeriods", periods);
+      await write({ ...data.goals, [lang]: converted });
+    } catch {
+      error = "Could not save goals. Try again.";
+    }
+  }
+
+  /** Hours listened before tracking began, added to all-time totals and milestones. */
+  async function setBaseline(lang: string, input: HTMLInputElement) {
+    const hours = Number(input.value);
+    if (input.value.trim() !== "" && (!Number.isFinite(hours) || hours < 0)) {
+      input.value = String(Math.round((data.baseline[lang] ?? 0) / 360) / 10);
+      return;
+    }
+    const next = { ...data.baseline };
+    if (!hours) delete next[lang];
+    else next[lang] = Math.round(hours * 3600);
+    error = "";
+    try {
+      data.baseline = next;
+      await save("baseline", next);
+    } catch {
+      error = "Could not save. Try again.";
+    }
+  }
 
   async function write(next: Goals) {
     error = "";
@@ -31,7 +70,7 @@
   }
 
   function setMinutes(lang: string, minutes: number) {
-    void write({ ...data.goals, [lang]: clamp(minutes) });
+    void write({ ...data.goals, [lang]: clampFor(lang, minutes) });
   }
 
   function commitTyped(lang: string, input: HTMLInputElement) {
@@ -40,7 +79,7 @@
       input.value = String(data.goals[lang] ?? DEFAULT_MINUTES);
       return;
     }
-    const minutes = clamp(parsed);
+    const minutes = clampFor(lang, parsed);
     input.value = String(minutes);
     setMinutes(lang, minutes);
   }
@@ -57,7 +96,7 @@
 <div class="panel">
   <h3>Goals</h3>
   <p class="intro">
-    A goal is how many minutes to listen each day in one language. Time counts only while a YouTube video plays in that language.
+    A goal is how many minutes to listen in one language, each day or each week. Time counts while a YouTube video plays in that language, plus anything you log by hand in History.
   </p>
 
   {#if goalRows.length === 0}
@@ -77,7 +116,7 @@
                 type="button"
                 aria-label="Less time for {englishName(lang)}"
                 disabled={minutes <= MIN_MINUTES}
-                onclick={() => setMinutes(lang, minutes - STEP)}
+                onclick={() => setMinutes(lang, minutes - stepFor(lang))}
               >
                 −
               </button>
@@ -91,13 +130,16 @@
               <button
                 type="button"
                 aria-label="More time for {englishName(lang)}"
-                disabled={minutes >= MAX_MINUTES}
-                onclick={() => setMinutes(lang, minutes + STEP)}
+                disabled={minutes >= maxFor(lang)}
+                onclick={() => setMinutes(lang, minutes + stepFor(lang))}
               >
                 +
               </button>
           </div>
-          <span class="dim unit">min a day</span>
+          <div class="seg period" role="group" aria-label="Goal period for {englishName(lang)}">
+            <button type="button" aria-pressed={!isWeekly(lang)} onclick={() => setPeriod(lang, "day")}>a day</button>
+            <button type="button" aria-pressed={isWeekly(lang)} onclick={() => setPeriod(lang, "week")}>a week</button>
+          </div>
           </div>
           <button type="button" class="remove" aria-label="Remove {englishName(lang)}" onclick={() => remove(lang)}>Remove</button>
         </li>
@@ -105,10 +147,37 @@
     </ul>
   {/if}
 
+  {#if goalRows.length}
+    <div class="before">
+      <h4>Hours before tracking</h4>
+      <p class="intro">Listening you did before installing this, counted toward all-time totals and hour milestones.</p>
+      <ul class="before-rows">
+        {#each goalRows as [lang] (lang)}
+          <li>
+            <i class="dot" style:background={langColor(lang)} aria-hidden="true"></i>
+            <span class="name"><LangName {lang} /></span>
+            <input
+              class="input hours"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              step="0.5"
+              placeholder="0"
+              value={data.baseline[lang] ? Math.round(data.baseline[lang] / 360) / 10 : ""}
+              aria-label="Hours of {englishName(lang)} before tracking"
+              onchange={(event) => setBaseline(lang, event.currentTarget)}
+            />
+            <span class="dim">hours</span>
+          </li>
+        {/each}
+      </ul>
+    </div>
+  {/if}
+
   <div class="add">
     <label for="goal-language">Add a language</label>
     <LanguagePicker id="goal-language" exclude={goalLangs} suggested={suggested} onpick={pickLanguage} />
-    <p class="dim hint">Picking a language adds it at {DEFAULT_MINUTES} min a day.</p>
+    <p class="dim hint">Picking a language adds it at {DEFAULT_MINUTES} min a day. A weekly goal spreads what is left of the week over the days remaining.</p>
   </div>
 
   {#if error}
@@ -220,10 +289,56 @@
     box-shadow: 0 0 0 2px var(--focus);
   }
 
-  .unit {
-    font-size: 14px;
-    white-space: nowrap;
+  .period button {
+    min-height: 1.875rem;
+    padding: 0 10px;
+    font-size: 12.5px;
   }
+
+  .before {
+    margin: 0 0 28px;
+  }
+
+  .before h4 {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .before .intro {
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+
+  .before-rows {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .before-rows li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .before-rows .name {
+    flex: 1;
+    min-width: 0;
+    font-size: 17px;
+  }
+
+  .hours {
+    width: 84px;
+    min-height: 2.25rem;
+    padding: 0 12px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
 
   .remove {
     min-height: 2.25rem;

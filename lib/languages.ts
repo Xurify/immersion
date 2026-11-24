@@ -24,6 +24,19 @@ export function baseColor(lang: Lang | null | undefined): string {
   return PALETTE[hash % PALETTE.length]!;
 }
 
+/** Goal languages get distinct colours: each keeps its usual one unless an earlier goal took it, then takes the next free one. */
+export function assignGoalColors(langs: Lang[]): Record<Lang, string> {
+  const taken = new Set<string>();
+  const out: Record<Lang, string> = {};
+  for (const lang of langs) {
+    let color = baseColor(lang);
+    if (taken.has(color)) color = PALETTE.find((candidate) => !taken.has(candidate)) ?? color;
+    taken.add(color);
+    out[lang] = color;
+  }
+  return out;
+}
+
 function capitalise(text: string, locale: string): string {
   return text.charAt(0).toLocaleUpperCase(locale) + text.slice(1);
 }

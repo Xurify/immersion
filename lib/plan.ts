@@ -2,6 +2,8 @@ import type { Goals, Lang, OpenVideo } from "./types";
 
 export interface LangProgress {
   lang: Lang;
+  /** A goal language; false for other languages heard today. */
+  isGoal: boolean;
   goalMinutes: number;
   listenedSeconds: number;
   /** Seconds still needed for the goal, 0 when met or without a goal. */
@@ -15,11 +17,11 @@ export function progressToday(goals: Goals, today: Record<Lang, number> | undefi
   const rows: LangProgress[] = Object.entries(goals).map(([lang, goalMinutes]) => {
     const listenedSeconds = listened[lang] ?? 0;
     const leftSeconds = Math.max(0, goalMinutes * 60 - listenedSeconds);
-    return { lang, goalMinutes, listenedSeconds, leftSeconds, done: leftSeconds === 0 };
+    return { lang, isGoal: true, goalMinutes, listenedSeconds, leftSeconds, done: leftSeconds === 0 };
   });
   for (const [lang, listenedSeconds] of Object.entries(listened)) {
     if (lang in goals || listenedSeconds < 60) continue;
-    rows.push({ lang, goalMinutes: 0, listenedSeconds, leftSeconds: 0, done: false });
+    rows.push({ lang, isGoal: false, goalMinutes: 0, listenedSeconds, leftSeconds: 0, done: false });
   }
   return rows;
 }
@@ -40,7 +42,7 @@ const playable = (video: OpenVideo) => video.remaining > 20 && video.duration > 
  */
 export function planSession(videos: OpenVideo[], progress: LangProgress[], budget: Budget): Plan {
   const pool = videos.filter(playable);
-  const behind = progress.filter((row) => row.goalMinutes > 0 && !row.done);
+  const behind = progress.filter((row) => row.isGoal && !row.done);
   const picked: OpenVideo[] = [];
   const take = (video: OpenVideo) => {
     if (!picked.includes(video)) picked.push(video);
@@ -94,5 +96,5 @@ export function interleave(videos: OpenVideo[]): OpenVideo[] {
 }
 
 export function defaultBudget(progress: LangProgress[]): Budget {
-  return progress.some((row) => row.goalMinutes > 0 && !row.done) ? "goals" : 45;
+  return progress.some((row) => row.isGoal && !row.done) ? "goals" : 45;
 }

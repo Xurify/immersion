@@ -1,4 +1,4 @@
-import { baseColor, PALETTE } from "./languages";
+import { assignGoalColors, baseColor, PALETTE } from "./languages";
 import type { Lang } from "./types";
 
 /**
@@ -8,15 +8,7 @@ import type { Lang } from "./types";
 let assigned = $state<Record<Lang, string>>({});
 
 export function setGoalLanguages(langs: Lang[]): void {
-  const taken = new Set<string>();
-  const next: Record<Lang, string> = {};
-  for (const lang of langs) {
-    let color = baseColor(lang);
-    if (taken.has(color)) color = PALETTE.find((candidate) => !taken.has(candidate)) ?? color;
-    taken.add(color);
-    next[lang] = color;
-  }
-  assigned = next;
+  assigned = assignGoalColors(langs);
 }
 
 export function langColor(lang: Lang | null | undefined): string {

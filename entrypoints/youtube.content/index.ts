@@ -70,7 +70,8 @@ export default defineContentScript({
       attachVideo();
       const videoId = currentVideoId();
       if (!alive || !videoId || !video) return;
-      report("yt:tick", { videoId, position: video.currentTime, playing: !video.paused && !video.ended });
+      const watching = document.visibilityState === "visible" || Boolean(document.pictureInPictureElement);
+      report("yt:tick", { videoId, position: video.currentTime, playing: !video.paused && !video.ended, watching });
     }
 
     /** Reported once per video, whether it ended or looped. */

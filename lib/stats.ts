@@ -1,5 +1,5 @@
-import { lastDays } from "./format";
-import type { Goals, Lang, ListenLog } from "./types";
+import { dateKey, lastDays } from "./format";
+import type { GoalPeriod, Goals, Lang, ListenLog, ManualEntry } from "./types";
 
 export type DayStatus = "hit" | "partly" | "missed" | "none";
 
@@ -102,3 +102,62 @@ export function otherLangs(log: ListenLog, langs: Lang[], keys: string[]): { lan
     .map(([lang, seconds]) => ({ lang, seconds }))
     .sort((a, b) => b.seconds - a.seconds);
 }
+
+/** The YouTube log with hand-logged entries added in. */
+export function withManual(log: ListenLog, manual: ManualEntry[]): ListenLog {
+  if (!manual.length) return log;
+  const out: ListenLog = {};
+  for (const [key, day] of Object.entries(log)) out[key] = { ...day };
+  for (const entry of manual) {
+    const day = (out[entry.date] ??= {});
+    day[entry.lang] = (day[entry.lang] ?? 0) + entry.seconds;
+  }
+  return out;
+}
+
+/** Date keys from this week's Monday through today. */
+export function weekSoFar(now: number = Date.now()): string[] {
+  const sinceMonday = (new Date(now).getDay() + 6) % 7;
+  return lastDays(sinceMonday + 1, now);
+}
+
+/**
+ * Minutes each goal asks for today. A weekly goal spreads what is still left
+ * this week over the days left, today included; once the week is covered it asks for 0.
+ */
+export function goalsForToday(goals: Goals, periods: Record<Lang, GoalPeriod>, log: ListenLog, now: number = Date.now()): Goals {
+  const week = weekSoFar(now);
+  const earlier = week.slice(0, -1);
+  const daysLeft = 7 - earlier.length;
+  const out: Goals = {};
+  for (const [lang, minutes] of Object.entries(goals)) {
+    if (periods[lang] !== "week") {
+      out[lang] = minutes;
+      continue;
+    }
+    const before = earlier.reduce((sum, key) => sum + (log[key]?.[lang] ?? 0), 0);
+    const leftMinutes = Math.max(0, minutes - before / 60);
+    out[lang] = Math.ceil(leftMinutes / daysLeft);
+  }
+  return out;
+}
+
+/** Goals as an even daily pace, for history: a weekly goal counts a seventh each day. */
+export function dailyPace(goals: Goals, periods: Record<Lang, GoalPeriod>): Goals {
+  const out: Goals = {};
+  for (const [lang, minutes] of Object.entries(goals)) out[lang] = periods[lang] === "week" ? Math.round(minutes / 7) : minutes;
+  return out;
+}
+
+/** Hours of input worth marking, Dreaming Spanish style. */
+export const MILESTONE_HOURS = [10, 25, 50, 100, 150, 200, 300, 500, 750, 1000, 1500, 2000];
+
+/** The milestones on either side of `hours` (previous is 0 before the first). */
+export function milestoneAround(hours: number): { previous: number; next: number } {
+  const next = MILESTONE_HOURS.find((mark) => mark > hours) ?? Math.ceil((hours + 1) / 500) * 500;
+  const previous = [...MILESTONE_HOURS].reverse().find((mark) => mark <= hours) ?? 0;
+  return { previous, next };
+}
+
+/** Today's key, re-exported for callers that only need stats. */
+export const todayKey = (now: number = Date.now()) => dateKey(now);
