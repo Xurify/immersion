@@ -115,7 +115,7 @@
         <button type="button" class="btn small ghost" onclick={() => (confirmingClear = false)}>Cancel</button>
       </div>
     {:else}
-      <button type="button" class="btn small ghost" onclick={() => (confirmingClear = true)}>Clear listening history</button>
+      <button type="button" class="btn small ghost clear" onclick={() => (confirmingClear = true)}>Clear listening history</button>
     {/if}
   </div>
 
@@ -175,6 +175,11 @@
   .import.disabled {
     opacity: 0.4;
     cursor: default;
+  }
+
+  .clear {
+    color: var(--danger);
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--danger) 45%, var(--line));
   }
 
   .btn.danger {

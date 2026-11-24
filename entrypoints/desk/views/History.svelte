@@ -3,6 +3,7 @@
   import { duration, hoursClock } from "../../../lib/format";
   import { englishName } from "../../../lib/languages";
   import { onlyLangs, otherLangs, summarise } from "../../../lib/stats";
+  import { langColor } from "../../../lib/colors.svelte";
   import { save } from "../../../lib/storage";
   import LangName from "../../../ui/LangName.svelte";
   import LangPanels from "../components/history/LangPanels.svelte";
@@ -32,9 +33,10 @@
   const hasListening = $derived(Object.values(data.log).some((day) => Object.values(day).some((seconds) => seconds > 0)));
 
   const diff = $derived(summary.totalSeconds - summary.previousSeconds);
+  const trend = $derived(Math.round(diff / 60) === 0 ? 0 : Math.sign(diff));
   const comparison = $derived.by(() => {
-    if (Math.round(Math.abs(diff) / 60) === 0) return `The same as the ${range.period} before.`;
-    return `${duration(Math.abs(diff))} ${diff > 0 ? "more" : "less"} than the ${range.period} before.`;
+    if (trend === 0) return `Same as the ${range.period} before`;
+    return `${duration(Math.abs(diff))} ${diff > 0 ? "more" : "less"} than the ${range.period} before`;
   });
   const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
 
@@ -46,17 +48,20 @@
 </script>
 
 <section class="history" aria-label="History">
-  <div class="hero">
+  <header class="hero">
     {#if hasListening}
-      <div class="figure">
-        <p class="eyebrow">{hasGoals ? "Goal languages" : "Listened"}, last {rangeDays} days</p>
+      <div class="lead">
+        <p class="eyebrow">{hasGoals ? "Goal languages" : "All listening"} · last {rangeDays} days</p>
         <p class="total big">{hoursClock(summary.totalSeconds)}<span class="unit">h</span></p>
-      </div>
-      <div class="note">
-        <p>{comparison}</p>
-        {#if hasGoals}
-          <p class="dim">{summary.allGoalsDays ? `Every goal hit on ${plural(summary.allGoalsDays, "day")}.` : "No day with every goal hit yet."}</p>
-        {/if}
+        <div class="facts">
+          <span class="chip" class:up={trend > 0} class:down={trend < 0}>
+            {#if trend !== 0}<span aria-hidden="true">{trend > 0 ? "▲" : "▼"}</span>{/if}
+            {comparison}
+          </span>
+          {#if hasGoals}
+            <span class="chip">{summary.allGoalsDays ? `Every goal hit on ${plural(summary.allGoalsDays, "day")}` : "No day with every goal hit yet"}</span>
+          {/if}
+        </div>
       </div>
     {/if}
     <div class="controls">
@@ -69,7 +74,7 @@
       </div>
       <button type="button" class="btn small ghost" onclick={onsettings}>Edit goals</button>
     </div>
-  </div>
+  </header>
 
   {#if !hasListening}
     <div class="empty-state">
@@ -79,31 +84,45 @@
       </p>
     </div>
   {:else}
-    <div class="chart">
+    <section class="surface chart" aria-labelledby="chart-title">
+      <header class="card-head">
+        <h2 id="chart-title">Each day</h2>
+        {#if summary.langs.length}
+          <ul class="legend" aria-label="Colours">
+            {#each summary.langs as item (item.lang)}
+              <li><i class="dot" style:background={langColor(item.lang)} aria-hidden="true"></i><LangName lang={item.lang} /></li>
+            {/each}
+          </ul>
+        {/if}
+      </header>
       {#if rangeDays === 7}
         <WeekChart {summary} {goalSeconds} />
       {:else}
         <RangeChart {summary} {goalSeconds} />
       {/if}
-    </div>
+    </section>
 
-    <LangPanels langs={summary.langs} calendar={calendar.langs} goals={data.goals} days={rangeDays} />
+    <section class="block" aria-labelledby="langs-title">
+      <h2 id="langs-title" class="section-title">By language</h2>
+      <LangPanels langs={summary.langs} calendar={calendar.langs} goals={data.goals} days={rangeDays} />
+    </section>
 
     {#if others.length}
-      <div class="others">
-        <h2>Also heard, not in your goals</h2>
-        <ul>
+      <section class="block" aria-labelledby="others-title">
+        <h2 id="others-title" class="section-title">Also heard, not in your goals</h2>
+        <ul class="others">
           {#each others as item (item.lang)}
             <li>
+              <i class="dot" style:background={langColor(item.lang)} aria-hidden="true"></i>
               <LangName lang={item.lang} />
               <span class="time">{duration(item.seconds)}</span>
               <button type="button" class="add" aria-label="Add a goal for {englishName(item.lang)}" onclick={() => addGoal(item.lang)}>
-                Add goal
+                + Add goal
               </button>
             </li>
           {/each}
         </ul>
-      </div>
+      </section>
     {/if}
   {/if}
 </section>
@@ -113,51 +132,51 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 32px;
-    padding: 16px var(--gutter) 48px;
+    gap: 40px;
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 32px var(--gutter) 64px;
   }
 
   .hero {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
-    gap: 16px 32px;
+    justify-content: space-between;
+    gap: 24px 32px;
   }
 
-  .figure {
+  .lead {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-  }
-
-  .eyebrow {
-    margin: 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--dim);
+    gap: 12px;
   }
 
   .total {
-    margin: 0;
-    font-size: clamp(88px, 9vw, 120px);
+    margin: 4px 0 0;
+    font-size: clamp(88px, 10vw, 136px);
   }
 
-  .note {
-    max-width: 24em;
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
   }
 
-  .note p {
-    margin: 0;
-    font-size: 18px;
-    line-height: 1.35;
-    color: var(--ink);
-    text-wrap: pretty;
+  .chip.up {
+    background: color-mix(in srgb, #1d7a4c 22%, var(--soft));
+    color: light-dark(#14583a, #8fe0b4);
   }
 
-  .note .dim {
-    margin-top: 4px;
-    font-size: 15px;
-    color: var(--dim);
+  .chip.down {
+    background: color-mix(in srgb, #c93a1e 18%, var(--soft));
+    color: light-dark(#8f2a15, #ffb4a3);
+  }
+
+  .chip span {
+    font-size: 10px;
   }
 
   .controls {
@@ -165,24 +184,61 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    margin-left: auto;
   }
 
   .controls .btn {
-    min-height: 2.375rem;
+    min-height: 2.5rem;
   }
 
-  .others h2 {
-    margin: 0 0 10px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--dim);
+  .controls .seg button {
+    min-height: 2.125rem;
   }
 
-  .others ul {
+  .chart {
+    padding: 24px 28px 28px;
+  }
+
+  .card-head {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    margin-bottom: 24px;
+  }
+
+  .card-head h2,
+  .section-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  .section-title {
+    margin-bottom: 16px;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .legend li {
+    display: inline-flex;
+    align-items: center;
     gap: 8px;
+    font-size: 16px;
+  }
+
+  .others {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -192,15 +248,16 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    min-height: 2.5rem;
-    padding: 0 6px 0 14px;
+    min-height: 3rem;
+    padding: 0 6px 0 16px;
     border-radius: var(--pill);
-    background: var(--soft);
+    background: var(--raised);
+    box-shadow: var(--lift);
     font-size: 14px;
   }
 
   .others li :global(.native) {
-    font-size: 17px;
+    font-size: 18px;
   }
 
   .time {
@@ -209,27 +266,30 @@
   }
 
   .add {
-    min-height: 1.875rem;
-    padding: 0 12px;
+    min-height: 2.25rem;
+    margin-left: 4px;
+    padding: 0 14px;
     border: 0;
     border-radius: var(--pill);
-    background: var(--raised);
-    box-shadow: inset 0 0 0 1px var(--line);
+    background: var(--soft);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
 
   .add:hover {
-    box-shadow: inset 0 0 0 1px var(--ink);
+    background: var(--ink);
+    color: var(--on-ink);
   }
 
   @media (max-width: 720px) {
     .history {
-      gap: 24px;
+      gap: 32px;
+      padding-top: 20px;
     }
 
-    .controls {
-      margin-left: 0;
+    .chart {
+      padding: 20px 16px;
     }
   }
 </style>

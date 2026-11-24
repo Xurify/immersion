@@ -56,6 +56,11 @@
     border-radius: 3px;
   }
 
+  button:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: -3px;
+  }
+
   button {
     display: flex;
     flex-direction: column;

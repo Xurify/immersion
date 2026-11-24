@@ -43,6 +43,11 @@
 </li>
 
 <style>
+  .band :focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
   .band {
     display: flex;
     align-items: center;
@@ -78,7 +83,7 @@
     margin-top: 4px;
     overflow: hidden;
     font-size: 12px;
-    opacity: 0.85;
+    opacity: 0.92;
     text-overflow: ellipsis;
     white-space: nowrap;
   }

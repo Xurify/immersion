@@ -242,6 +242,10 @@
     line-height: 1.2;
   }
 
+  .head .text-btn {
+    margin-right: -4px;
+  }
+
   .text-btn {
     min-height: 2.25rem;
     padding: 0 4px;
@@ -265,6 +269,10 @@
   .big {
     margin: 8px 16px 0;
     font-size: 92px;
+  }
+
+  .big .unit {
+    margin-left: 0.25em;
   }
 
   .big.wide {

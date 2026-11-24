@@ -1,6 +1,7 @@
 <script lang="ts">
   import { clock, thumbnail } from "../../../../lib/format";
   import { englishName } from "../../../../lib/languages";
+  import LangName from "../../../../ui/LangName.svelte";
   import { langColor } from "../../../../lib/colors.svelte";
   import type { Column } from "../../../../lib/board";
   import { MOVE_LABEL, timeOf, type CardActions, type Row } from "./rows";
@@ -23,8 +24,8 @@
   const percent = $derived(row.duration > 0 ? Math.min(100, (row.position / row.duration) * 100) : 0);
   // Zero length means the video's details never arrived; a dash reads better than 0:00.
   const time = $derived.by(() => {
-    if (row.duration <= 0) return "—";
-    return row.lane === "done" ? clock(row.duration) : `${clock(row.left)}${row.position > 0 ? " left" : ""}`;
+    if (row.duration <= 0) return "";
+    return row.lane === "done" || row.position <= 0 ? clock(row.duration) : `${clock(row.left)} left`;
   });
 
   function setLang() {
@@ -54,21 +55,22 @@
   >
     <div class="thumb" style:background={gradient}>
       {#if !thumbFailed}
-        <img src={thumbnail(row.videoId)} alt="" loading="lazy" width="72" height="41" onerror={() => (thumbFailed = true)} />
+        <img src={thumbnail(row.videoId)} alt="" loading="lazy" width="96" height="54" onerror={() => (thumbFailed = true)} />
+      {/if}
+      {#if time}<span class="len">{time}</span>{/if}
+      {#if row.position > 0 || playing}
+        <span class="seen" aria-hidden="true"><i style:width="{percent}%" style:background={colour}></i></span>
       {/if}
     </div>
     <div class="text">
       <b class="title">{row.title}</b>
       <div class="meta">
         <i class="dot" style:background={colour} aria-hidden="true"></i>
-        <span class="sr-only">{englishName(row.lang)}</span>
-        <span>{time}</span>
-        {#if row.tab && !playing}<span class="tab">tab open</span>{/if}
+        {#if row.lang}<LangName lang={row.lang} />{:else}<span>Unknown</span>{/if}
+        {#if row.card.channel}<span class="channel">· {row.card.channel}</span>{/if}
       </div>
+      {#if row.tab && !playing}<span class="tag">Tab open</span>{/if}
     </div>
-    {#if row.position > 0 || playing}
-      <div class="bar" aria-hidden="true"><i style:width="{percent}%" style:background={colour}></i></div>
-    {/if}
   </div>
 
   {#if !playing}
@@ -103,48 +105,54 @@
   .card {
     position: relative;
     flex: none;
-    border-radius: 12px;
-    transition: box-shadow 0.15s ease;
+    border-radius: 14px;
     background: var(--raised);
-    box-shadow: 0 1px 0 rgb(0 0 0 / 0.04), 0 0 0 1px var(--line);
+    box-shadow: var(--lift);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
   }
 
   .card:hover {
-    box-shadow: 0 1px 0 rgb(0 0 0 / 0.04), 0 0 0 1px color-mix(in srgb, var(--ink) 30%, var(--line));
+    box-shadow: 0 0 0 1px var(--line-2), 0 10px 24px -12px var(--shadow);
+  }
+
+  .card:has(.hit:active) {
+    transform: scale(0.99);
   }
 
   .card.dragging {
-    opacity: 0.45;
+    opacity: 0.4;
   }
 
-  .card.done {
-    opacity: 0.6;
+  .card.done .thumb {
+    opacity: 0.55;
   }
 
   .card.done .title {
     color: var(--dim);
     text-decoration: line-through;
-    text-decoration-color: var(--dim);
+    text-decoration-color: color-mix(in srgb, var(--ink) 50%, transparent);
   }
 
   .card.now {
-    background: color-mix(in srgb, var(--on-ink) 9%, var(--ink));
+    background: color-mix(in srgb, var(--on-ink) 8%, var(--ink));
     color: var(--on-ink);
     box-shadow: none;
   }
 
   .hit {
     display: grid;
-    grid-template-columns: 72px minmax(0, 1fr);
+    grid-template-columns: 96px minmax(0, 1fr);
     gap: 10px;
-    padding: 10px;
-    border-radius: 12px;
+    padding: 8px;
+    border-radius: 14px;
     cursor: pointer;
   }
 
   .thumb {
+    position: relative;
+    align-self: start;
     aspect-ratio: 16 / 9;
-    border-radius: 6px;
+    border-radius: 8px;
     overflow: hidden;
   }
 
@@ -154,16 +162,50 @@
     object-fit: cover;
   }
 
+  .len {
+    position: absolute;
+    right: 4px;
+    bottom: 6px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgb(0 0 0 / 0.78);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .seen {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: rgb(255 255 255 / 0.3);
+  }
+
+  .seen i {
+    display: block;
+    height: 100%;
+  }
+
   .text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
     min-width: 0;
-    padding-right: 22px;
+    padding: 2px 28px 2px 0;
   }
 
   .title {
     display: -webkit-box;
     overflow: hidden;
     font-size: 13.5px;
-    line-height: 1.25;
+    font-weight: 650;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
     line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -171,49 +213,66 @@
 
   .meta {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: 6px;
-    margin-top: 6px;
+    max-width: 100%;
+    min-width: 0;
     font-size: 12px;
     color: var(--dim);
-    font-variant-numeric: tabular-nums;
   }
 
-  .now .meta {
+  .meta .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2.5px;
+  }
+
+  .meta :global(.native) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+
+  /* Narrow columns keep the language and drop the channel rather than cut both. */
+  @container lane (max-width: 330px) {
+    .channel {
+      display: none;
+    }
+  }
+
+  .channel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .now .text {
+    padding-right: 0;
+  }
+
+  .now .meta,
+  .now .meta :global(.native) {
     color: color-mix(in srgb, var(--on-ink) 70%, transparent);
   }
 
-  .tab {
-    padding: 0 6px;
-    border: 1px solid var(--line);
+  .tag {
+    padding: 0 7px;
     border-radius: var(--pill);
+    background: var(--soft);
+    color: var(--ink-2);
     font-size: 11px;
-    line-height: 1.5;
-  }
-
-  .bar {
-    grid-column: 1 / -1;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--line);
-    overflow: hidden;
-  }
-
-  .now .bar {
-    background: color-mix(in srgb, var(--on-ink) 18%, transparent);
-  }
-
-  .bar i {
-    display: block;
-    height: 100%;
-    border-radius: 2px;
+    font-weight: 600;
+    line-height: 1.6;
   }
 
   .more {
     position: absolute;
-    top: 6px;
-    right: 6px;
+    top: 4px;
+    right: 4px;
     display: grid;
     place-items: center;
     width: 2rem;
@@ -248,15 +307,18 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: 0 8px 8px;
+    margin: 0 8px;
+    padding: 6px 0 8px;
+    border-top: 1px solid var(--line);
   }
 
   .menu button {
-    padding: 6px 8px;
+    padding: 7px 10px;
     border: 0;
     border-radius: 8px;
     background: transparent;
     font-size: 13px;
+    font-weight: 500;
     text-align: start;
   }
 

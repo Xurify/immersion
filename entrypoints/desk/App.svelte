@@ -54,7 +54,15 @@
 
 <div class="shell">
   <header>
-    <span class="brand">Language Immersion Tracker</span>
+    <span class="brand">
+      <svg class="mark" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+        <rect x="2" y="9" width="4" height="6" rx="2" fill="currentColor" opacity="0.45" />
+        <rect x="8" y="4" width="4" height="16" rx="2" fill="currentColor" />
+        <rect x="14" y="7" width="4" height="10" rx="2" fill="currentColor" opacity="0.7" />
+        <rect x="20" y="10" width="2" height="4" rx="1" fill="currentColor" opacity="0.35" />
+      </svg>
+      <span class="brand-name">Immersion</span>
+    </span>
     <nav aria-label="Views">
       {#each VIEWS as item (item.id)}
         <a
@@ -101,38 +109,57 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    gap: 1rem;
-    padding: 16px clamp(16px, 3vw, 40px);
-    background: color-mix(in srgb, var(--bg) 92%, transparent);
-    backdrop-filter: blur(8px);
+    gap: 16px;
+    height: 64px;
+    padding: 0 var(--gutter);
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    backdrop-filter: blur(12px) saturate(1.4);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--line) 70%, transparent);
   }
 
   .brand {
-    margin-right: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .mark {
+    flex: none;
+  }
+
+  .brand-name {
+    font-size: 16px;
     font-weight: 800;
-    font-size: 15px;
+    letter-spacing: -0.02em;
     white-space: nowrap;
   }
 
   nav {
     display: flex;
     gap: 2px;
+    padding: 3px;
+    border-radius: var(--pill);
+    background: var(--soft);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
 
   nav a {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    min-height: 2.25rem;
-    padding: 0 13px;
+    min-height: 2.125rem;
+    padding: 0 14px;
     border-radius: var(--pill);
     color: var(--dim);
-    font-size: 15px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 600;
     text-decoration: none;
     white-space: nowrap;
+    transition: color 0.15s ease, background-color 0.15s ease;
   }
 
   nav a:hover {
@@ -140,36 +167,35 @@
   }
 
   nav a[aria-current="page"] {
-    background: var(--ink);
-    color: var(--on-ink);
+    background: var(--raised);
+    color: var(--ink);
+    box-shadow: 0 0 0 1px var(--line-2), 0 1px 3px var(--shadow);
   }
 
   .badge {
     min-width: 1.25rem;
-    padding: 0 5px;
+    padding: 0 6px;
     border-radius: var(--pill);
-    background: var(--soft);
-    color: var(--ink);
-    font-size: 12px;
+    background: var(--ink);
+    color: var(--on-ink);
+    font-size: 11px;
     font-weight: 700;
     line-height: 1.25rem;
     text-align: center;
-  }
-
-  [aria-current="page"] .badge {
-    background: color-mix(in srgb, var(--on-ink) 22%, transparent);
-    color: var(--on-ink);
+    font-variant-numeric: tabular-nums;
   }
 
   .settings {
+    justify-self: end;
     display: grid;
     place-items: center;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2.5rem;
+    height: 2.5rem;
     border: 0;
     border-radius: var(--pill);
     background: transparent;
     color: var(--dim);
+    transition: color 0.15s ease, background-color 0.15s ease;
   }
 
   .settings:hover {
@@ -184,23 +210,26 @@
   }
 
   @media (max-width: 720px) {
+    header {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+    }
+
     .brand {
       display: none;
     }
 
     nav {
-      margin-right: auto;
+      justify-self: start;
+      max-width: 100%;
+      overflow-x: auto;
     }
   }
 
   @media (max-width: 440px) {
-    header {
-      gap: 0.25rem;
-    }
-
     nav a {
       padding: 0 9px;
-      font-size: 14px;
+      font-size: 13px;
     }
   }
 </style>

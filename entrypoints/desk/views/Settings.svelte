@@ -74,7 +74,7 @@
     border-radius: var(--r-lg);
     background: var(--raised);
     color: var(--ink);
-    box-shadow: 0 30px 80px var(--shadow);
+    box-shadow: 0 0 0 1px var(--line-2), 0 30px 80px var(--shadow);
     overflow: hidden;
   }
 

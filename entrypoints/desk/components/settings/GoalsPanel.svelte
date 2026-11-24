@@ -71,32 +71,34 @@
             <LangName {lang} />
             <span class="dim">{englishName(lang)}</span>
           </span>
-          <div class="stepper" role="group" aria-label="Minutes a day for {englishName(lang)}">
-            <button
-              type="button"
-              aria-label="Less time for {englishName(lang)}"
-              disabled={minutes <= MIN_MINUTES}
-              onclick={() => setMinutes(lang, minutes - STEP)}
-            >
-              −
-            </button>
-            <input
-              type="text"
-              inputmode="numeric"
-              value={minutes}
-              aria-label="Minutes a day for {englishName(lang)}"
-              onchange={(event) => commitTyped(lang, event.currentTarget)}
-            />
-            <button
-              type="button"
-              aria-label="More time for {englishName(lang)}"
-              disabled={minutes >= MAX_MINUTES}
-              onclick={() => setMinutes(lang, minutes + STEP)}
-            >
-              +
-            </button>
+          <div class="amount">
+            <div class="stepper" role="group" aria-label="Minutes a day for {englishName(lang)}">
+              <button
+                type="button"
+                aria-label="Less time for {englishName(lang)}"
+                disabled={minutes <= MIN_MINUTES}
+                onclick={() => setMinutes(lang, minutes - STEP)}
+              >
+                −
+              </button>
+              <input
+                type="text"
+                inputmode="numeric"
+                value={minutes}
+                aria-label="Minutes a day for {englishName(lang)}"
+                onchange={(event) => commitTyped(lang, event.currentTarget)}
+              />
+              <button
+                type="button"
+                aria-label="More time for {englishName(lang)}"
+                disabled={minutes >= MAX_MINUTES}
+                onclick={() => setMinutes(lang, minutes + STEP)}
+              >
+                +
+              </button>
           </div>
           <span class="dim unit">min a day</span>
+          </div>
           <button type="button" class="remove" aria-label="Remove {englishName(lang)}" onclick={() => remove(lang)}>Remove</button>
         </li>
       {/each}
@@ -140,7 +142,7 @@
 
   .row {
     display: grid;
-    grid-template-columns: 10px minmax(0, 1fr) auto auto auto;
+    grid-template-columns: 10px minmax(0, 1fr) auto auto;
     align-items: center;
     gap: 12px;
     padding: 10px 0;
@@ -158,6 +160,12 @@
 
   .name .dim {
     font-size: 14px;
+  }
+
+  .amount {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
   }
 
   .stepper {
@@ -219,6 +227,7 @@
 
   .remove {
     min-height: 2.25rem;
+    margin-right: -0.75rem;
     padding: 0 0.75rem;
     border: 0;
     border-radius: var(--pill);
@@ -262,14 +271,8 @@
       grid-template-columns: 10px minmax(0, 1fr) auto;
     }
 
-    .stepper {
-      grid-column: 2;
-      grid-row: 2;
-      justify-self: start;
-    }
-
-    .unit {
-      grid-column: 3;
+    .amount {
+      grid-column: 2 / -1;
       grid-row: 2;
     }
 

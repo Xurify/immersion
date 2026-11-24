@@ -408,10 +408,9 @@
     <div class="top">
       <div class="stat">
         {#if goals.length}
+          <p class="eyebrow">{activeFilter ? `Left today in ${englishName(activeFilter)}` : "Left today"}</p>
           <p class="big">{minutes(leftSeconds)}<span class="unit">min</span></p>
-          <p class="sentence">
-            {activeFilter ? `left today in ${englishName(activeFilter)}` : "left today"} · Up next covers {minutes(nextSeconds)} min
-          </p>
+          <p class="sentence">Up next covers {minutes(nextSeconds)} min of it</p>
         {:else}
           <div class="copy">
             <h2 class="headline">Set a daily goal</h2>
@@ -423,17 +422,21 @@
 
       {#if goals.length}
         <div class="chips" role="group" aria-label="Filter by language">
-          <button class="pill" type="button" aria-pressed={activeFilter === null} onclick={() => (filter = null)}>All</button>
+          <button class="goal all" type="button" aria-pressed={activeFilter === null} onclick={() => (filter = null)}>All</button>
           {#each goals as row (row.lang)}
+            {@const share = Math.min(100, Math.round((1 - row.leftSeconds / (row.goalMinutes * 60)) * 100))}
             <button
-              class="pill"
+              class="goal"
               type="button"
+              style:--c={langColor(row.lang)}
               aria-pressed={activeFilter === row.lang}
               onclick={() => (filter = activeFilter === row.lang ? null : row.lang)}
             >
-              <i class="dot" style:background={langColor(row.lang)} aria-hidden="true"></i>
-              <LangName lang={row.lang} />
-              <span class="count">{row.done ? "done" : `${minutes(row.leftSeconds)} min left`}</span>
+              <span class="goal-top">
+                <LangName lang={row.lang} />
+                <span class="count">{row.done ? "Done" : `${minutes(row.leftSeconds)} min left`}</span>
+              </span>
+              <span class="goal-bar" aria-hidden="true"><i style:width="{share}%"></i></span>
             </button>
           {/each}
         </div>
@@ -524,7 +527,7 @@
       >
         {#snippet footer()}
           {#if data.playing}
-            <button class="btn inverse" type="button" onclick={pause}>Pause session</button>
+            <button class="btn small" class:inverse={shownRows.playing.length > 0} type="button" onclick={pause}>Pause session</button>
             <button class="btn ghost small" type="button" onclick={skip}>Skip</button>
             <p class="caption">{nextTitle ? `Next: ${nextTitle}` : "Nothing after this one"}</p>
           {/if}
@@ -563,7 +566,7 @@
         ondrop={drop}
       >
         {#snippet footer()}
-          <span class="dim">Drop here to close the tab and keep it for later</span>
+          <span class="dim">Drop here to close the tab and keep the video</span>
         {/snippet}
       </Lane>
     </div>
@@ -587,10 +590,10 @@
   .board {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    height: calc(100vh - 68px);
+    gap: 24px;
+    height: calc(100dvh - 64px);
     min-height: 560px;
-    padding: 16px var(--gutter) 24px;
+    padding: 24px var(--gutter) 24px;
   }
 
   .top {
@@ -601,12 +604,15 @@
   }
 
   .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     min-width: 0;
   }
 
   .big {
     margin: 0;
-    font-size: 64px;
+    font-size: 72px;
     font-weight: 800;
     letter-spacing: -0.06em;
     line-height: 0.8;
@@ -621,9 +627,9 @@
 
   .sentence {
     max-width: 30em;
-    margin: 10px 0 0;
-    color: var(--ink-2);
-    font-size: 16px;
+    margin: 2px 0 0;
+    color: var(--dim);
+    font-size: 15px;
     line-height: 1.35;
   }
 
@@ -649,13 +655,74 @@
   .chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
     margin-left: auto;
   }
 
-  .chips .count {
+  .goal {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    min-width: 150px;
+    min-height: 3.5rem;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: 16px;
+    background: var(--raised);
+    box-shadow: var(--lift);
+    text-align: start;
+    transition: box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+
+  .goal:hover {
+    box-shadow: 0 0 0 1px var(--line-2), 0 8px 20px -12px var(--shadow);
+  }
+
+  .goal[aria-pressed="true"] {
+    box-shadow: 0 0 0 2px var(--ink);
+  }
+
+  .goal.all {
+    min-width: 0;
+    align-items: center;
+    padding: 0 18px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .goal-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .goal-top :global(.native) {
+    font-size: 17px;
+  }
+
+  .goal .count {
     color: var(--dim);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
     font-variant-numeric: tabular-nums;
+  }
+
+  .goal-bar {
+    display: block;
+    height: 4px;
+    border-radius: var(--pill);
+    background: color-mix(in srgb, var(--c) 20%, var(--soft));
+    overflow: hidden;
+  }
+
+  .goal-bar i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--c);
   }
 
   .stash {
@@ -728,12 +795,36 @@
   }
 
   /* The one horizontal scroll allowed: columns keep a usable width and snap into view. */
-  @media (max-width: 999px) {
+  @media (max-width: 1360px) {
     .lanes {
       display: flex;
       overflow-x: auto;
       overscroll-behavior-x: contain;
       scroll-snap-type: x mandatory;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .board {
+      height: auto;
+      min-height: calc(100dvh - 64px);
+      padding-top: 16px;
+    }
+
+    .chips {
+      flex-wrap: nowrap;
+      max-width: 100%;
+      margin-left: 0;
+      padding: 2px;
+      overflow-x: auto;
+    }
+
+    .goal {
+      flex: none;
+    }
+
+    .lanes {
+      min-height: 460px;
     }
   }
 </style>

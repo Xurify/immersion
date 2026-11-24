@@ -14,7 +14,7 @@
 
   // Quarter gets a label each month; Month gets one each week.
   const labelEvery = $derived(summary.keys.length > 45 ? 30 : 7);
-  const scale = $derived(Math.max(goalSeconds, ...summary.perDay.map(sumOf), 1));
+  const scale = $derived(Math.max(goalSeconds, ...summary.perDay.map(sumOf), 1) * 1.08);
 
   const columns = $derived(
     summary.keys.map((key, i) => {
@@ -86,15 +86,14 @@
     height: 100%;
   }
 
-  .stack {
-    border-radius: 3px 3px 0 0;
-    overflow: hidden;
-  }
-
   .stack i {
     flex: none;
     display: block;
     width: 100%;
+  }
+
+  .stack i:first-child {
+    border-radius: 3px 3px 0 0;
   }
 
   .goal {
@@ -114,6 +113,12 @@
     flex: 1 1 0;
     min-width: 2px;
     height: 1.4em;
+  }
+
+  /* Labels near the right end grow leftward so they stay inside the card. */
+  .date:nth-last-child(-n + 4) .label {
+    left: auto;
+    right: 0;
   }
 
   .label {

@@ -113,8 +113,8 @@
   /* Drawn per row; the row gaps break it into the dashes of one goal line. */
   .goal {
     position: absolute;
-    top: -4px;
-    bottom: -4px;
+    top: 0;
+    bottom: 0;
     width: 2px;
     margin-left: -1px;
     border-radius: 1px;

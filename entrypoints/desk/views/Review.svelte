@@ -7,6 +7,7 @@
   import { dueLabel, dueSentences, isLearned } from "../../../lib/review";
   import { load, save } from "../../../lib/storage";
   import type { Grade, Sentence } from "../../../lib/types";
+  import LangName from "../../../ui/LangName.svelte";
   import ReviewCard from "../components/review/ReviewCard.svelte";
   import SavedList from "../components/review/SavedList.svelte";
 
@@ -110,7 +111,7 @@
         <span class="sr-only">{dueText}</span>
         <span class="due-items" aria-hidden="true">
           {#each dueByLang as item (item.lang)}
-            <span class="item"><i class="dot" style:background={langColor(item.lang)}></i>{item.count} {englishName(item.lang)}</span>
+            <span class="item"><i class="dot" style:background={langColor(item.lang)}></i>{item.count} <LangName lang={item.lang} /></span>
           {/each}
         </span>
       </p>
@@ -118,7 +119,7 @@
 
     <div class="strip" style:--now={langColor(current.lang)} aria-hidden="true">
       {#each segments as i (i)}
-        <i class="seg" class:done={i < done} class:now={i === done}></i>
+        <i class="step" class:done={i < done} class:now={i === done}></i>
       {/each}
     </div>
 
@@ -156,9 +157,12 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
+    width: 100%;
+    max-width: 960px;
     min-height: 0;
-    padding: 16px var(--gutter) 48px;
+    margin: 0 auto;
+    padding: 40px var(--gutter) 64px;
   }
 
   .head {
@@ -171,7 +175,7 @@
 
   .count {
     margin: 0;
-    font-size: 30px;
+    font-size: 22px;
     font-weight: 800;
     letter-spacing: -0.02em;
     line-height: 1.1;
@@ -198,23 +202,27 @@
     font-variant-numeric: tabular-nums;
   }
 
+  .item :global(.native) {
+    font-size: 16px;
+  }
+
   .strip {
     display: flex;
     gap: 4px;
   }
 
-  .seg {
+  .step {
     flex: 1;
-    height: 6px;
+    height: 4px;
     border-radius: 3px;
     background: var(--line);
   }
 
-  .seg.done {
+  .step.done {
     background: var(--ink);
   }
 
-  .seg.now {
+  .step.now {
     background: var(--now);
   }
 

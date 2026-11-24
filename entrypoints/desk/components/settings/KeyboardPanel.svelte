@@ -60,7 +60,7 @@
 
   .row {
     display: grid;
-    grid-template-columns: 9rem minmax(0, 1fr);
+    grid-template-columns: 11.5rem minmax(0, 1fr);
     gap: 16px;
     align-items: baseline;
     padding: 11px 0;
@@ -82,8 +82,8 @@
 
   kbd {
     display: inline-block;
-    min-width: 1.9rem;
-    padding: 2px 8px;
+    min-width: 1.65rem;
+    padding: 2px 6px;
     border: 1px solid var(--line);
     border-radius: 6px;
     background: var(--soft);
@@ -98,7 +98,8 @@
   }
 
   .where {
-    margin-left: 8px;
+    display: block;
+    margin-top: 2px;
     font-size: 12.5px;
     font-weight: 600;
     color: var(--dim);

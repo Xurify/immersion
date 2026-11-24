@@ -305,7 +305,10 @@
     display: flex;
     flex-direction: column;
     gap: 24px;
-    padding: 16px var(--gutter) 120px;
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 32px var(--gutter) 120px;
   }
 
   .top {
@@ -350,6 +353,9 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
+  }
+
+  .total + .tools {
     margin-left: auto;
   }
 
@@ -392,5 +398,11 @@
     margin: 0;
     color: var(--danger);
     font-size: 14px;
+  }
+
+  @media (max-width: 520px) {
+    .search {
+      width: 100%;
+    }
   }
 </style>

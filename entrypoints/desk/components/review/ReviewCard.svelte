@@ -82,7 +82,7 @@
   });
 </script>
 
-<article class="card" style:background={color} style:--panel={color} aria-label="Sentence to review">
+<article class="card" style:background-color={color} style:--panel={color} aria-label="Sentence to review">
   <p class="label">
     <span class="lang"><LangName lang={sentence.lang} /></span>
     <span class="source">from “{sentence.videoTitle}” at {clock(sentence.start)}</span>
@@ -93,11 +93,11 @@
   <div class="tools">
     <button class="btn small ghost" type="button" aria-keyshortcuts="Space" onclick={onhear}>
       <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path fill="currentColor" d="M2.5 1.2v9.6L10.5 6z" /></svg>
-      Hear it <span class="chip" aria-hidden="true">Space</span>
+      Hear it <span class="key" aria-hidden="true">Space</span>
     </button>
     {#if !revealed}
       <button class="btn ghost small" type="button" onclick={() => (revealed = true)}>
-        Show translation <span class="chip" aria-hidden="true">T</span>
+        Show translation <span class="key" aria-hidden="true">T</span>
       </button>
     {/if}
   </div>
@@ -121,24 +121,24 @@
     </div>
   {/if}
 
-  <footer class="actions">
-    <div class="grades">
-      {#each GRADES as item (item.grade)}
-        <div class="grade">
-          <button
-            class="btn {item.grade === 'good' ? 'light' : 'ghost'}"
-            type="button"
-            aria-keyshortcuts={item.key}
-            aria-describedby="hint-{item.grade}"
-            disabled={busy}
-            onclick={() => ongrade(item.grade)}
-          >
-            {item.label} <span class="chip" aria-hidden="true">{item.key}</span>
-          </button>
-          <span class="hint" id="hint-{item.grade}">{hint(item.grade)}</span>
-        </div>
-      {/each}
-    </div>
+  <footer class="grades">
+    {#each GRADES as item (item.grade)}
+      <button
+        class="grade"
+        class:good={item.grade === "good"}
+        type="button"
+        aria-keyshortcuts={item.key}
+        aria-describedby="hint-{item.grade}"
+        disabled={busy}
+        onclick={() => ongrade(item.grade)}
+      >
+        <span class="grade-top">
+          <span class="grade-label">{item.label}</span>
+          <span class="key" aria-hidden="true">{item.key}</span>
+        </span>
+        <span class="hint" id="hint-{item.grade}">{hint(item.grade)}</span>
+      </button>
+    {/each}
   </footer>
 </article>
 
@@ -146,10 +146,11 @@
   .card {
     display: flex;
     flex-direction: column;
-    min-height: clamp(320px, 50vh, 480px);
-    padding: clamp(24px, 4vw, 40px) clamp(24px, 4vw, 50px);
-    border-radius: var(--r-lg);
+    padding: clamp(24px, 4vw, 48px);
+    border-radius: 28px;
+    background-image: radial-gradient(120% 80% at 100% 0%, rgb(255 255 255 / 0.16), transparent 60%);
     color: #fff;
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.14) inset, 0 24px 60px -28px color-mix(in srgb, var(--panel) 80%, #000);
   }
 
   .card button:focus-visible,
@@ -164,29 +165,39 @@
     align-items: baseline;
     gap: 4px 12px;
     margin: 0;
-    font-size: 15px;
-    font-weight: 500;
+    font-size: 14px;
   }
 
   .lang {
-    font-size: 28px;
+    font-size: 26px;
+  }
+
+  .source {
+    opacity: 0.9;
   }
 
   .text {
-    margin: 32px 0 0;
-    max-width: 16em;
-    text-wrap: balance;
-    font-size: clamp(34px, 4.6vw, 60px);
+    margin: 40px 0 0;
+    font-size: clamp(34px, 4.4vw, 56px);
     font-weight: 700;
     letter-spacing: -0.03em;
-    line-height: 1.04;
+    line-height: 1.08;
+    text-wrap: balance;
   }
 
   .tools {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 24px;
+    margin-top: 28px;
+  }
+
+  .tools .btn.ghost {
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.45);
+  }
+
+  .tools .btn.ghost:hover {
+    box-shadow: inset 0 0 0 1px #fff;
   }
 
   .reveal {
@@ -196,9 +207,10 @@
 
   .translation {
     margin: 0;
+    padding-left: 16px;
+    border-left: 3px solid rgb(255 255 255 / 0.5);
     font-size: 21px;
-    line-height: 1.35;
-    opacity: 0.9;
+    line-height: 1.4;
   }
 
   .add label {
@@ -218,9 +230,9 @@
     min-width: 0;
     min-height: 2.75rem;
     padding: 0 1.1rem;
-    border: 1.5px solid rgba(255, 255, 255, 0.7);
+    border: 1.5px solid rgba(255, 255, 255, 0.6);
     border-radius: var(--pill);
-    background: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.12);
     color: #fff;
     font-size: 16px;
   }
@@ -232,43 +244,98 @@
     color: #fff;
   }
 
-  .chip {
+  .key {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.4em;
     margin-left: 2px;
     padding: 0 5px;
-    border: 1px solid currentColor;
-    border-radius: 4px;
+    border-radius: 5px;
+    background: rgb(255 255 255 / 0.18);
     font-size: 11px;
-    font-weight: 600;
-    line-height: 1.5;
-    opacity: 0.6;
-  }
-
-  .actions {
-    margin-top: auto;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 16px;
-    padding-top: 32px;
+    font-weight: 700;
+    line-height: 1.6;
   }
 
   .grades {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
+    margin-top: 48px;
   }
 
   .grade {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-height: 4.5rem;
+    padding: 12px 16px;
+    border: 0;
+    border-radius: 18px;
+    background: rgb(0 0 0 / 0.16);
+    color: #fff;
+    text-align: start;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22);
+    transition: background-color 0.15s ease, transform 0.12s ease;
+  }
+
+  .grade:hover {
+    background: rgb(0 0 0 / 0.26);
+  }
+
+  .grade:active {
+    transform: scale(0.98);
+  }
+
+  .grade:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .grade.good {
+    background: #fff;
+    color: var(--panel);
+    box-shadow: none;
+  }
+
+  .grade.good:hover {
+    background: rgb(255 255 255 / 0.9);
+  }
+
+  .grade.good .key {
+    background: color-mix(in srgb, var(--panel) 14%, transparent);
+  }
+
+  .grade-top {
+    display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .grade-label {
+    font-size: 17px;
+    font-weight: 800;
   }
 
   .hint {
     font-size: 13px;
-    opacity: 0.85;
-    white-space: nowrap;
+    opacity: 0.9;
   }
 
+  @media (max-width: 520px) {
+    .grades {
+      gap: 6px;
+    }
+
+    .grade {
+      padding: 10px 12px;
+    }
+
+    .key {
+      display: none;
+    }
+  }
 </style>

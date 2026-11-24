@@ -53,18 +53,27 @@
         aria-label="Session name"
         {onkeydown}
       />
-      <button class="btn light small" type="submit" disabled={busy}>Save session</button>
+      <button class="btn inverse small" type="submit" disabled={busy}>Save session</button>
       <button class="btn ghost small" type="button" onclick={cancel}>Cancel</button>
     </form>
   {:else}
     <span class="count">{count} selected · {duration(seconds)}</span>
     <button class="btn ghost small" type="button" onclick={() => (naming = true)}>Save</button>
     <button class="btn ghost small" type="button" onclick={onclose}>Close tabs</button>
-    <button class="btn light small" type="button" onclick={onstart}>Start →</button>
+    <button class="btn inverse small" type="button" onclick={onstart}>Start →</button>
   {/if}
 </div>
 
 <style>
+  .inverse {
+    background: var(--on-ink);
+    color: var(--ink);
+  }
+
+  .bar :focus-visible {
+    outline-color: var(--on-ink);
+  }
+
   .bar {
     position: fixed;
     bottom: 22px;
@@ -75,6 +84,7 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
+    width: max-content;
     max-width: calc(100vw - 32px);
     padding: 8px 8px 8px 20px;
     transform: translateX(-50%);
@@ -88,6 +98,10 @@
   .count {
     margin-right: auto;
     white-space: nowrap;
+  }
+
+  .bar:has(.naming) {
+    padding: 8px;
   }
 
   .naming {

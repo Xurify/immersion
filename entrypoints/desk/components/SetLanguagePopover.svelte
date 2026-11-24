@@ -44,11 +44,11 @@
     <p class="for">{title}</p>
 
     <div class="scope" role="radiogroup" aria-label="Apply to">
-      <label class="seg" class:on={scope === "video"}>
+      <label class="opt" class:on={scope === "video"}>
         <input type="radio" name={scopeName} value="video" checked={scope === "video"} onchange={() => (chosen = "video")} />
         <span class="seg-text">This video</span>
       </label>
-      <label class="seg" class:on={scope === "channel"} class:off={!channel}>
+      <label class="opt" class:on={scope === "channel"} class:off={!channel}>
         <input
           type="radio"
           name={scopeName}
@@ -101,13 +101,14 @@
   .scope {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 4px;
-    padding: 4px;
+    gap: 2px;
+    padding: 3px;
     border-radius: var(--pill);
     background: var(--soft);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
 
-  .seg {
+  .opt {
     position: relative;
     display: flex;
     min-width: 0;
@@ -122,23 +123,23 @@
     cursor: pointer;
   }
 
-  .seg.on {
-    background: var(--raised);
-    color: var(--ink);
-    box-shadow: 0 1px 2px var(--shadow);
+  .opt.on {
+    background: var(--ink);
+    color: var(--on-ink);
+    box-shadow: none;
   }
 
-  .seg.off {
+  .opt.off {
     opacity: 0.5;
     cursor: default;
   }
 
-  .seg:focus-within {
+  .opt:focus-within {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
   }
 
-  .seg input {
+  .opt input {
     position: absolute;
     width: 1px;
     height: 1px;
