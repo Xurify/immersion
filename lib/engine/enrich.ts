@@ -7,8 +7,9 @@ import { playerResponseFromHtml } from "./watchPage";
 const CONCURRENCY = 3;
 const FLUSH_SIZE = 5;
 const FLUSH_MS = 1000;
-/** Only a failed network fetch is retried; a page without a player response is not. */
-const MAX_ATTEMPTS = 2;
+/** A failed fetch, or a page without a player response (a consent or bot-check page), is tried again this many times in all. */
+const MAX_ATTEMPTS = 3;
+const RETRY_MS = 60_000;
 const ATTEMPTS_KEY = "enrichAttempts";
 
 export interface EnrichTarget {
@@ -42,7 +43,8 @@ async function responseFromTab(tabId: number, videoId: string): Promise<PlayerRe
 }
 
 async function responseFromWatchPage(videoId: string): Promise<PlayerResponse | null> {
-  const html = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=en`).then((response) => response.text());
+  // With the browser's YouTube cookies, so the fetch gets the page the user would see rather than a consent wall.
+  const html = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=en`, { credentials: "include" }).then((response) => response.text());
   return playerResponseFromHtml(html);
 }
 
@@ -53,8 +55,8 @@ async function lookup(target: EnrichTarget): Promise<PlayerResponse | null> {
 
 /**
  * Looks up metadata for videos the background has not yet seen in full. Up to
- * CONCURRENCY lookups run at once, and each video is attempted once per browser
- * session (twice when a fetch fails on the network). Finished results are handed
+ * CONCURRENCY lookups run at once. A video is looked up until it succeeds, at most
+ * MAX_ATTEMPTS times per browser session, a minute apart. Finished results are handed
  * to `write` in batches, so many tabs cost a few storage writes, not one each.
  */
 export function createEnrich(write: (metas: VideoMeta[]) => Promise<void>) {
@@ -97,14 +99,16 @@ export function createEnrich(write: (metas: VideoMeta[]) => Promise<void>) {
     try {
       const response = await lookup(target);
       const meta = response && metaFromPlayerResponse(response);
-      if (response && meta) {
-        const goals = Object.keys(await load("goals"));
-        found.push(withTextLang(meta, response.videoDetails?.shortDescription, goals));
-      }
+      if (!response || !meta) throw new Error("No player response");
+      const goals = Object.keys(await load("goals"));
+      found.push(withTextLang(meta, response.videoDetails?.shortDescription, goals));
       attempts.set(target.videoId, MAX_ATTEMPTS);
     } catch {
       if (count < MAX_ATTEMPTS) {
-        queue.push(target);
+        setTimeout(() => {
+          queue.push(target);
+          pump();
+        }, RETRY_MS);
         schedule();
         return;
       }
@@ -136,5 +140,12 @@ export function createEnrich(write: (metas: VideoMeta[]) => Promise<void>) {
     pump();
   }
 
-  return { enqueue };
+  /** Forgets every earlier attempt, so the next enqueue looks each video up again. */
+  async function reset(): Promise<void> {
+    await loadAttempts();
+    attempts.clear();
+    await browser.storage.session.set({ [ATTEMPTS_KEY]: {} });
+  }
+
+  return { enqueue, reset };
 }

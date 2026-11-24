@@ -17,6 +17,7 @@
 
   let activeTabId = $state<number | null>(null);
   let error = $state("");
+  let retrying = $state(false);
 
   const goalRows = $derived(data.progress.filter((row) => row.goalMinutes > 0));
   const hasGoals = $derived(goalRows.length > 0);
@@ -117,6 +118,19 @@
     }
   }
 
+  /** Clears earlier failed lookups and asks the background to fetch every missing video again. */
+  async function retryDetails() {
+    error = "";
+    retrying = true;
+    try {
+      await send("meta:retry", {});
+    } catch {
+      error = "Could not retry. Try again.";
+    } finally {
+      setTimeout(() => (retrying = false), 4000);
+    }
+  }
+
   async function stashTabs() {
     error = "";
     try {
@@ -168,7 +182,11 @@
             {/each}
           </div>
           {#if reading}
-            <p class="status" role="status"><span class="spinner" aria-hidden="true"></span>Loading details for {unreadCount} of {data.tabs.length} tabs…</p>
+            <p class="status" role="status">
+              <span class="spinner" aria-hidden="true"></span>
+              <span>Loading details for {unreadCount} of {data.tabs.length} tabs…</span>
+              <button type="button" class="retry" disabled={retrying} onclick={retryDetails}>{retrying ? "Retrying" : "Retry"}</button>
+            </p>
           {/if}
         </section>
       {/if}
@@ -377,7 +395,29 @@
     font-variant-numeric: tabular-nums;
   }
 
+  .retry {
+    margin-left: auto;
+    padding: 2px 8px;
+    border: 0;
+    border-radius: var(--pill);
+    background: var(--soft);
+    color: var(--ink-2);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .retry:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--on-ink);
+  }
+
+  .retry:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
   .spinner {
+    flex: none;
     width: 12px;
     height: 12px;
     border: 2px solid var(--line-2);

@@ -22,6 +22,8 @@ export interface Requests {
   "review:grade": { req: { sentenceId: string; grade: Grade }; res: Sentence };
   "lang:override": { req: { videoId: string; channel: string; lang: string; scope: "video" | "channel" }; res: void };
   "desk:open": { req: { view?: string }; res: void };
+  /** Looks up details again for every open tab and board card still missing them, even ones tried before. */
+  "meta:retry": { req: {}; res: { queued: number } };
 
   /**
    * Board. The background is the only writer of storage "board", so a card's

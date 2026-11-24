@@ -1,6 +1,7 @@
 <script lang="ts">
   import { data } from "../../../../lib/data.svelte";
   import { dateKey } from "../../../../lib/format";
+  import { send } from "../../../../lib/messages";
 
   const KNOWN_KEYS = ["goals", "log", "sentences", "sessions", "meta", "overrides"] as const;
   type Known = (typeof KNOWN_KEYS)[number];
@@ -8,6 +9,21 @@
   let message = $state("");
   let busy = $state(false);
   let confirmingClear = $state(false);
+
+  const missing = $derived(data.tabs.filter((video) => video.duration <= 0).length);
+
+  async function retryDetails() {
+    busy = true;
+    message = "";
+    try {
+      const { queued } = await send("meta:retry", {});
+      message = queued ? `Looking up ${queued} ${queued === 1 ? "video" : "videos"} again. This can take a minute.` : "Every video already has its details.";
+    } catch {
+      message = "Could not start the lookup. Try again.";
+    } finally {
+      busy = false;
+    }
+  }
 
   const isPlainObject = (value: unknown): boolean => typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -104,6 +120,17 @@
         <input class="sr-only" type="file" accept="application/json,.json" disabled={busy} onchange={importFile} />
       </label>
     </div>
+  </div>
+
+  <div class="block">
+    <h4>Video details</h4>
+    <p class="intro">
+      {missing
+        ? `${missing} open ${missing === 1 ? "tab is" : "tabs are"} missing a length or language.`
+        : "Every open tab has its length and language."}
+      Details for sleeping tabs are fetched from YouTube in the background, so the tabs never need reloading.
+    </p>
+    <button type="button" class="btn small ghost" disabled={busy} onclick={retryDetails}>Look them up again</button>
   </div>
 
   <div class="block">

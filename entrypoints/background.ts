@@ -66,6 +66,17 @@ async function saveFound(found: VideoMeta[]): Promise<void> {
 }
 
 const enrich = createEnrich(saveFound);
+
+/** Open tabs and board cards still missing a length or language. */
+async function missingDetails(videos: OpenVideo[]) {
+  const [board, meta] = await Promise.all([load("board"), load("meta")]);
+  return [
+    ...videos.filter((video) => needsMeta(video)).map((video) => ({ videoId: video.videoId, tabId: video.tabId })),
+    ...Object.values(board.cards)
+      .filter((card) => (!card.lang || !card.duration) && needsMeta(meta[card.videoId]))
+      .map((card) => ({ videoId: card.videoId })),
+  ];
+}
 let injected = false;
 
 async function audibleFocusedTabIds(): Promise<number[]> {
@@ -148,14 +159,16 @@ const handlers: { [K in RequestKey]: Handler<K> } = {
       injected = true;
       void injectIntoYouTubeTabs(false);
     }
-    const [videos, board, meta] = await Promise.all([openVideos(), load("board"), load("meta")]);
-    void enrich.enqueue([
-      ...videos.filter((video) => needsMeta(video)).map((video) => ({ videoId: video.videoId, tabId: video.tabId })),
-      ...Object.values(board.cards)
-        .filter((card) => (!card.lang || !card.duration) && needsMeta(meta[card.videoId]))
-        .map((card) => ({ videoId: card.videoId })),
-    ]);
+    const videos = await openVideos();
+    void missingDetails(videos).then((targets) => enrich.enqueue(targets));
     return videos;
+  },
+
+  "meta:retry": async () => {
+    const targets = await missingDetails(await openVideos());
+    await enrich.reset();
+    await enrich.enqueue(targets);
+    return { queued: targets.length };
   },
 
   "tabs:focus": ({ tabId }) => focusTab(tabId),
