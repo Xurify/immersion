@@ -1,3 +1,4 @@
+import type { Column } from "./board";
 import type { Grade, OpenVideo, ReadingItem, Sentence, VideoMeta } from "./types";
 
 /**
@@ -21,6 +22,26 @@ export interface Requests {
   "review:grade": { req: { sentenceId: string; grade: Grade }; res: Sentence };
   "lang:override": { req: { videoId: string; channel: string; lang: string; scope: "video" | "channel" }; res: void };
   "desk:open": { req: { view?: string }; res: void };
+
+  /**
+   * Board. The background is the only writer of storage "board", so a card's
+   * position (updated from ticks) and moves from the page never overwrite each other.
+   */
+  /** Puts open tabs on the board (keeping cards' columns, new ones in Inbox) and closes them. Without ids: every YouTube tab except the one playing. */
+  "board:stash": { req: { videoIds?: string[] }; res: { stashed: number } };
+  /** Adds open tabs to the board without closing them. */
+  "board:add": { req: { videoIds: string[]; column: Column; index?: number }; res: void };
+  /** Moves a card; to Later or Done also closes its tab. */
+  "board:move": { req: { videoId: string; column: Column; index?: number }; res: void };
+  "board:remove": { req: { videoId: string; closeTab: boolean }; res: void };
+  /** Plays a card (default: first of Up next) in one tab at its saved position, then Up next in order. */
+  "board:play": { req: { videoId?: string }; res: void };
+  /** Stops after the current video; the current card goes back to the top of Up next. */
+  "board:pause": { req: {}; res: void };
+  /** Skips the current card to Done and plays the next. */
+  "board:skip": { req: {}; res: void };
+  /** Moves YouTube items from Chrome's reading list into Inbox and marks them read. */
+  "board:import-reading": { req: {}; res: { added: number } };
 
   /** From the content script: page metadata after load or navigation. */
   "yt:meta": { req: VideoMeta; res: void };

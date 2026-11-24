@@ -1,7 +1,8 @@
 import { dateKey } from "./format";
 import { send } from "./messages";
 import { progressToday, type LangProgress } from "./plan";
-import { load, watch } from "./storage";
+import { emptyBoard, pruneDone, type Board } from "./board";
+import { load, loadSession, watch, type SessionShape } from "./storage";
 import type { Goals, ListenLog, OpenVideo, Sentence, Session } from "./types";
 
 /**
@@ -14,6 +15,9 @@ class Data {
   log = $state<ListenLog>({});
   sentences = $state<Sentence[]>([]);
   sessions = $state<Session[]>([]);
+  /** Done cards from earlier days are hidden here; the background prunes them on its next write. */
+  board = $state<Board>(emptyBoard());
+  playing = $state<SessionShape["playing"]>(null);
   loaded = $state(false);
 
   today = $derived(this.log[dateKey()] ?? {});
@@ -32,7 +36,16 @@ class Data {
   }
 
   async refreshStored(): Promise<void> {
-    const [goals, log, sentences, sessions] = await Promise.all([load("goals"), load("log"), load("sentences"), load("sessions")]);
+    const [goals, log, sentences, sessions, board, playing] = await Promise.all([
+      load("goals"),
+      load("log"),
+      load("sentences"),
+      load("sessions"),
+      load("board"),
+      loadSession("playing"),
+    ]);
+    this.board = pruneDone(board);
+    this.playing = playing;
     this.goals = goals;
     this.log = log;
     this.sentences = sentences;
@@ -44,9 +57,12 @@ class Data {
     this.#started = true;
     await Promise.all([this.refreshStored(), this.refreshTabs()]);
     this.loaded = true;
-    watch(["goals", "log", "sentences", "sessions", "meta", "overrides"], () => {
+    watch(["goals", "log", "sentences", "sessions", "meta", "overrides", "board"], () => {
       void this.refreshStored();
       void this.refreshTabs();
+    });
+    browser.storage.onChanged.addListener((changes, area) => {
+      if (area === "session" && "playing" in changes) void this.refreshStored();
     });
     browser.tabs.onCreated.addListener(() => void this.refreshTabs());
     browser.tabs.onRemoved.addListener(() => void this.refreshTabs());
