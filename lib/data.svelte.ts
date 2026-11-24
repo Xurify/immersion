@@ -5,7 +5,7 @@ import { setGoalLanguages } from "./colors.svelte";
 import { emptyBoard, pruneDone, type Board } from "./board";
 import { load, loadSession, watch, type SessionShape } from "./storage";
 import { goalsForToday, withManual } from "./stats";
-import type { GoalPeriod, Goals, ListenLog, ManualEntry, OpenVideo, Sentence, Session } from "./types";
+import type { Follow, GoalPeriod, Goals, ListenLog, ManualEntry, OpenVideo, Sentence, Session } from "./types";
 
 /**
  * Live data shared by every view on a page. Call `start()` once from the page's root;
@@ -20,6 +20,7 @@ class Data {
   manual = $state<ManualEntry[]>([]);
   baseline = $state<Record<string, number>>({});
   goalPeriods = $state<Record<string, GoalPeriod>>({});
+  follows = $state<Record<string, Follow>>({});
   /** Everything listened: YouTube plus hand-logged entries. */
   log = $derived(withManual(this.youtubeLog, this.manual));
   sentences = $state<Sentence[]>([]);
@@ -49,7 +50,7 @@ class Data {
   }
 
   async refreshStored(): Promise<void> {
-    const [goals, log, sentences, sessions, board, playing, watched, logBackground, manual, baseline, goalPeriods] = await Promise.all([
+    const [goals, log, sentences, sessions, board, playing, watched, logBackground, manual, baseline, goalPeriods, follows] = await Promise.all([
       load("goals"),
       load("log"),
       load("sentences"),
@@ -61,7 +62,9 @@ class Data {
       load("manual"),
       load("baseline"),
       load("goalPeriods"),
+      load("follows"),
     ]);
+    this.follows = follows;
     this.logBackground = logBackground;
     this.manual = manual;
     this.baseline = baseline;
@@ -81,7 +84,7 @@ class Data {
     this.#started = true;
     await Promise.all([this.refreshStored(), this.refreshTabs()]);
     this.loaded = true;
-    watch(["goals", "log", "sentences", "sessions", "meta", "overrides", "board", "watched", "logBackground", "manual", "baseline", "goalPeriods"], () => {
+    watch(["goals", "log", "sentences", "sessions", "meta", "overrides", "board", "watched", "logBackground", "manual", "baseline", "goalPeriods", "follows"], () => {
       void this.refreshStored();
       void this.refreshTabs();
     });

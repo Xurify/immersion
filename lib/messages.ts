@@ -22,6 +22,11 @@ export interface Requests {
   "review:grade": { req: { sentenceId: string; grade: Grade }; res: Sentence };
   "lang:override": { req: { videoId: string; channel: string; lang: string; scope: "video" | "channel" }; res: void };
   "desk:open": { req: { view?: string }; res: void };
+  /** Follows the channel that uploaded a video; its newest uploads land in Inbox now, and new ones every few hours. */
+  "channels:follow": { req: { videoId: string }; res: { name: string; added: number } };
+  "channels:unfollow": { req: { channelId: string }; res: void };
+  /** Reads every followed channel's feed now. */
+  "channels:check": { req: {}; res: { added: number } };
   /** Looks up details again for every open tab and board card still missing them, even ones tried before. */
   "meta:retry": { req: {}; res: { queued: number } };
 

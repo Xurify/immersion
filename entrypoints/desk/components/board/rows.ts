@@ -41,6 +41,7 @@ export interface CardActions {
   move: (row: Row, column: Column) => void;
   setLang: (row: Row, anchor: HTMLElement) => void;
   remove: (row: Row) => void;
+  follow: (row: Row) => void;
   menu: (row: Row) => void;
   key: (event: KeyboardEvent, row: Row) => void;
   focus: (row: Row) => void;

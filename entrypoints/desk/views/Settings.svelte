@@ -1,14 +1,16 @@
 <script lang="ts">
   import AppearancePanel from "../components/settings/AppearancePanel.svelte";
+  import ChannelsPanel from "../components/settings/ChannelsPanel.svelte";
   import DataPanel from "../components/settings/DataPanel.svelte";
   import GoalsPanel from "../components/settings/GoalsPanel.svelte";
   import KeyboardPanel from "../components/settings/KeyboardPanel.svelte";
 
   let { open = $bindable(false) }: { open?: boolean } = $props();
 
-  type Section = "goals" | "appearance" | "keyboard" | "data";
+  type Section = "goals" | "channels" | "appearance" | "keyboard" | "data";
   const SECTIONS: { id: Section; label: string }[] = [
     { id: "goals", label: "Goals" },
+    { id: "channels", label: "Channels" },
     { id: "appearance", label: "Appearance" },
     { id: "keyboard", label: "Keyboard" },
     { id: "data", label: "Data" },
@@ -53,6 +55,8 @@
       <div class="content">
         {#if section === "goals"}
           <GoalsPanel />
+        {:else if section === "channels"}
+          <ChannelsPanel />
         {:else if section === "appearance"}
           <AppearancePanel />
         {:else if section === "keyboard"}

@@ -12,6 +12,8 @@ export interface VideoMeta {
   detectedLang: Lang | null;
   /** "text" is a guess from the title, so captions or audio data can replace it. */
   langSource?: "captions" | "text";
+  /** YouTube's id for the uploader, used to follow the channel. */
+  channelId?: string;
 }
 
 /** An open YouTube tab as the pages see it. */
@@ -105,4 +107,17 @@ export interface ManualEntry {
   /** "Podcast", "Audiobook", "TV", "Tutor" or "Other". */
   source: string;
   addedAt: number;
+}
+
+/** A channel whose new uploads land in Inbox. */
+export interface Follow {
+  channelId: string;
+  name: string;
+  /** Language given to its uploads until their own is detected. */
+  lang: Lang | null;
+  followedAt: number;
+  /** When its feed was last read; null before the first check. */
+  checkedAt: number | null;
+  /** Uploads already brought in, newest last, so a removed card does not come back. */
+  seen: string[];
 }

@@ -9,6 +9,8 @@
   import { defaultBudget, planSession } from "../../lib/plan";
   import type { OpenVideo } from "../../lib/types";
   import LangBand from "./components/LangBand.svelte";
+  import LanguagePicker from "../../ui/LanguagePicker.svelte";
+  import { englishName } from "../../lib/languages";
 
   /** Same cut as planSession: nothing to play in a clip with under 20 seconds left. */
   const playable = (video: OpenVideo) => video.remaining > 20 && video.duration > 0;
@@ -18,6 +20,9 @@
   let activeTabId = $state<number | null>(null);
   let error = $state("");
   let retrying = $state(false);
+  let tabNote = $state("");
+  let pickingLang = $state(false);
+  let langScope = $state<"video" | "channel">("video");
 
   const goalRows = $derived(data.progress.filter((row) => row.isGoal));
   const hasGoals = $derived(goalRows.length > 0);
@@ -115,6 +120,48 @@
       await send("board:skip", {});
     } catch {
       error = "Could not skip. Try again.";
+    }
+  }
+
+  /** Files the current tab on the board. Inbox and Later close the tab; Up next keeps it open. */
+  async function fileThisTab(column: "inbox" | "next" | "later") {
+    const video = thisTab;
+    if (!video) return;
+    error = "";
+    try {
+      if (column === "inbox") await send("board:stash", { videoIds: [video.videoId] });
+      else await send("board:add", { videoIds: [video.videoId], column });
+      if (column === "later") await send("board:move", { videoId: video.videoId, column: "later" });
+      tabNote = column === "next" ? "Added to Up next" : column === "later" ? "Saved for later, tab closed" : "Stashed to Inbox, tab closed";
+    } catch {
+      error = "Could not file this tab. Try again.";
+    }
+  }
+
+  const followsThisTab = $derived(Boolean(thisTab && Object.values(data.follows).some((follow) => follow.name === thisTab.channel)));
+
+  async function followThisTab() {
+    const video = thisTab;
+    if (!video) return;
+    error = "";
+    try {
+      const { name, added } = await send("channels:follow", { videoId: video.videoId });
+      tabNote = `Following ${name}${added ? `, ${added} new in Inbox` : ""}`;
+    } catch (problem) {
+      error = problem instanceof Error ? problem.message : "Could not follow this channel.";
+    }
+  }
+
+  async function setThisTabLang(lang: string) {
+    const video = thisTab;
+    if (!video) return;
+    error = "";
+    try {
+      await send("lang:override", { videoId: video.videoId, channel: video.channel, lang, scope: langScope });
+      pickingLang = false;
+      tabNote = langScope === "channel" ? `${video.channel} set to ${englishName(lang)}` : `Set to ${englishName(lang)}`;
+    } catch {
+      error = "Could not change the language. Try again.";
     }
   }
 
@@ -247,12 +294,34 @@
   </div>
 
   {#if data.loaded && thisTab}
-    <footer class="this">
+    <footer class="this-wrap">
+    {#if pickingLang}
+      <div class="picker">
+        <div class="picker-head">
+          <span class="this-label">Language for</span>
+          <div class="seg" role="group" aria-label="Apply to">
+            <button type="button" aria-pressed={langScope === "video"} onclick={() => (langScope = "video")}>This video</button>
+            <button type="button" aria-pressed={langScope === "channel"} disabled={!thisTab.channel} onclick={() => (langScope = "channel")}>Whole channel</button>
+          </div>
+        </div>
+        <LanguagePicker suggested={Object.keys(data.goals)} onpick={setThisTabLang} label="Language for this tab" />
+      </div>
+    {/if}
+    <div class="this">
       <span class="thumb" style:--c={langColor(thisTab.lang)}>
         <img src={thumbnail(thisTab.videoId)} alt="" width="64" height="36" />
       </span>
       <span class="this-text">
-        <span class="this-label">This tab</span>
+        <span class="this-top">
+          <span class="this-label">This tab</span>
+          {#if thisTab.channel}
+            {#if followsThisTab}
+              <span class="following">Following</span>
+            {:else}
+              <button type="button" class="follow" onclick={followThisTab}>+ Follow channel</button>
+            {/if}
+          {/if}
+        </span>
         <span class="this-title">{thisTab.title}</span>
         <span class="this-meta">
           {#if thisTabKnown}
@@ -269,6 +338,17 @@
           {/if}
         </span>
       </span>
+    </div>
+    <div class="tab-actions" role="group" aria-label="This tab">
+      {#if tabNote}
+        <p class="tab-note" role="status">{tabNote}</p>
+      {:else}
+        <button type="button" onclick={() => fileThisTab("inbox")}>Inbox</button>
+        <button type="button" onclick={() => fileThisTab("next")}>Up next</button>
+        <button type="button" onclick={() => fileThisTab("later")}>Later</button>
+        <button type="button" aria-expanded={pickingLang} onclick={() => (pickingLang = !pickingLang)}>Language</button>
+      {/if}
+    </div>
     </footer>
   {/if}
 </main>
@@ -562,14 +642,77 @@
     font-weight: 600;
   }
 
-  .this {
+  .this-wrap {
     flex: none;
     display: flex;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
+    gap: 10px;
     padding: 12px 16px 14px;
     border-top: 1px solid var(--line);
     background: var(--raised);
+  }
+
+  .this {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .picker {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .picker-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .picker-head .seg button {
+    min-height: 1.75rem;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .tab-actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .tab-actions button {
+    min-height: 2rem;
+    padding: 0 6px;
+    border: 0;
+    border-radius: var(--pill);
+    background: var(--soft);
+    color: var(--ink-2);
+    font-size: 12.5px;
+    font-weight: 600;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .tab-actions button:hover,
+  .tab-actions button[aria-expanded="true"] {
+    background: var(--ink);
+    color: var(--on-ink);
+  }
+
+  .tab-note {
+    grid-column: 1 / -1;
+    margin: 0;
+    min-height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--pill);
+    background: var(--soft);
+    color: var(--ink-2);
+    font-size: 12.5px;
+    font-weight: 600;
   }
 
   .thumb {
@@ -592,6 +735,33 @@
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+  }
+
+  .this-text {
+    flex: 1;
+  }
+
+  .this-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .follow,
+  .following {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--dim);
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+
+  .follow:hover {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 
   .this-label {

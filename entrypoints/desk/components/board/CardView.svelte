@@ -102,6 +102,9 @@
     <div class="menu">
       <button type="button" onclick={() => actions.play(row)}>Play now</button>
       <button type="button" onclick={setLang}>Set language</button>
+      {#if row.card.channel}
+        <button type="button" onclick={() => actions.follow(row)}>Follow {row.card.channel}</button>
+      {/if}
       {#each COLUMNS as column (column)}
         {#if column !== row.source}
           <button type="button" onclick={() => actions.move(row, column)}>Move to {MOVE_LABEL[column]}</button>

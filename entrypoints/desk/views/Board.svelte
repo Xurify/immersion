@@ -403,6 +403,14 @@
       langTarget = { videoId: row.videoId, channel: row.card.channel, title: row.title, anchor };
     },
     remove: (row) => void remove(row),
+    follow: (row) => {
+      menuId = null;
+      void attempt(() => send("channels:follow", { videoId: row.videoId })).then((result) => {
+        if (!result) return;
+        stashNote = `Following ${result.name}${result.added ? `, ${result.added} new in Inbox` : ""}`;
+        later(4000, () => (stashNote = ""));
+      });
+    },
     menu: (row) => {
       menuId = menuId === row.videoId ? null : row.videoId;
     },

@@ -1,5 +1,5 @@
 import type { Board } from "./board";
-import type { ActiveSession, GoalPeriod, Goals, ListenLog, ManualEntry, Overrides, Sentence, Session, VideoMeta } from "./types";
+import type { ActiveSession, Follow, GoalPeriod, Goals, ListenLog, ManualEntry, Overrides, Sentence, Session, VideoMeta } from "./types";
 
 /** Every persisted value, in browser.storage.local unless noted. */
 export interface StorageShape {
@@ -20,6 +20,8 @@ export interface StorageShape {
   baseline: Record<string, number>;
   /** Languages missing here have daily goals. */
   goalPeriods: Record<string, GoalPeriod>;
+  /** Followed channels, keyed by channel id. */
+  follows: Record<string, Follow>;
 }
 
 /** Lives in browser.storage.session: gone when the browser closes. */
@@ -44,6 +46,7 @@ export const DEFAULTS: StorageShape = {
   manual: [],
   baseline: {},
   goalPeriods: {},
+  follows: {},
 };
 
 export async function load<K extends keyof StorageShape>(key: K): Promise<StorageShape[K]> {

@@ -3,7 +3,7 @@
   import { dateKey } from "../../../../lib/format";
   import { send } from "../../../../lib/messages";
 
-  const KNOWN_KEYS = ["goals", "log", "sentences", "sessions", "meta", "overrides", "watched", "board", "logBackground", "manual", "baseline", "goalPeriods"] as const;
+  const KNOWN_KEYS = ["goals", "log", "sentences", "sessions", "meta", "overrides", "watched", "board", "logBackground", "manual", "baseline", "goalPeriods", "follows"] as const;
   type Known = (typeof KNOWN_KEYS)[number];
 
   let message = $state("");

@@ -8,6 +8,7 @@ export interface PlayerResponse {
     videoId?: string;
     title?: string;
     author?: string;
+    channelId?: string;
     lengthSeconds?: string;
     isLive?: boolean;
     defaultAudioLanguageCode?: string;
@@ -105,6 +106,7 @@ export function metaFromPlayerResponse(response: PlayerResponse | null | undefin
     videoId: details.videoId,
     title: cleanTitle(details.title ?? ""),
     channel: details.author ?? "",
+    ...(details.channelId ? { channelId: details.channelId } : {}),
     duration: details.isLive ? 0 : Number(details.lengthSeconds) || 0,
     detectedLang,
     langSource: detectedLang ? "captions" : undefined,
@@ -128,5 +130,6 @@ export function mergeMeta(previous: VideoMeta | undefined, incoming: VideoMeta):
     duration: incoming.duration || previous.duration,
     detectedLang: keep.detectedLang,
     langSource: keep.langSource,
+    ...(incoming.channelId || previous.channelId ? { channelId: incoming.channelId || previous.channelId } : {}),
   };
 }

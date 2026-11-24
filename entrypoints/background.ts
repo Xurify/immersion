@@ -18,6 +18,9 @@ import type { OpenVideo, ReadingItem, VideoMeta } from "../lib/types";
 import { assignGoalColors, baseColor } from "../lib/languages";
 import { goalsForToday, withManual } from "../lib/stats";
 import { progressToday } from "../lib/plan";
+import { feedUrl, newUploads, parseFeed } from "../lib/engine/feeds";
+import { metaFromPlayerResponse } from "../lib/engine/player";
+import { playerResponseFromHtml } from "../lib/engine/watchPage";
 
 type Sender = Browser.runtime.MessageSender;
 type Handler<K extends RequestKey> = (payload: Requests[K]["req"], sender: Sender) => Promise<Requests[K]["res"]>;
@@ -121,6 +124,67 @@ async function missingDetails(videos: OpenVideo[]) {
 }
 let injected = false;
 
+const FEED_ALARM = "feeds";
+const FEED_EVERY_MINUTES = 360;
+/** Seen ids kept per channel; feeds list only the latest 15 uploads, so this is plenty. */
+const SEEN_KEEP = 60;
+
+/** Reads followed channels' feeds and puts new uploads in Inbox. Returns how many cards were added. */
+async function checkFeeds(only?: string): Promise<number> {
+  const follows = await load("follows");
+  const ids = only ? [only] : Object.keys(follows);
+  let added = 0;
+  const queued: string[] = [];
+  for (const channelId of ids) {
+    const follow = follows[channelId];
+    if (!follow) continue;
+    let entries;
+    try {
+      const xml = await fetch(feedUrl(channelId), { credentials: "include" }).then((response) => response.text());
+      entries = parseFeed(xml);
+    } catch {
+      continue;
+    }
+    const uploads = newUploads(entries, follow.checkedAt, new Set(follow.seen));
+    await serial(async () => {
+      const [board, overrides] = await Promise.all([load("board"), load("overrides")]);
+      let next = board;
+      const now = Date.now();
+      for (const upload of uploads) {
+        if (next.cards[upload.videoId]) continue;
+        next = upsert(
+          next,
+          {
+            url: `https://www.youtube.com/watch?v=${upload.videoId}`,
+            videoId: upload.videoId,
+            title: upload.title,
+            channel: follow.name,
+            duration: 0,
+            lang: resolveLang(upload.videoId, follow.name, follow.lang, overrides),
+            position: 0,
+          },
+          "inbox",
+          now,
+        );
+        added++;
+        queued.push(upload.videoId);
+      }
+      if (next !== board) await writeBoard(next);
+      const latest = await load("follows");
+      if (latest[channelId]) {
+        latest[channelId] = {
+          ...latest[channelId]!,
+          checkedAt: now,
+          seen: [...latest[channelId]!.seen, ...uploads.map((upload) => upload.videoId)].slice(-SEEN_KEEP),
+        };
+        await save("follows", latest);
+      }
+    });
+  }
+  if (queued.length) void enrich.enqueue(queued.map((videoId) => ({ videoId })));
+  return added;
+}
+
 async function audibleFocusedTabIds(): Promise<number[]> {
   const tabs = await browser.tabs.query({ active: true, lastFocusedWindow: true, audible: true });
   return tabs.flatMap((tab) => (tab.id === undefined ? [] : [tab.id]));
@@ -205,6 +269,47 @@ const handlers: { [K in RequestKey]: Handler<K> } = {
     void missingDetails(videos).then((targets) => enrich.enqueue(targets));
     return videos;
   },
+
+  "channels:follow": async ({ videoId }) => {
+    const metas = await load("meta");
+    let meta = metas[videoId];
+    if (!meta?.channelId) {
+      // Details stored before channel ids were kept: read the watch page once.
+      const html = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=en`, { credentials: "include" }).then((response) => response.text());
+      const fresh = metaFromPlayerResponse(playerResponseFromHtml(html));
+      if (fresh) {
+        meta = mergeMeta(meta, fresh);
+        await saveFound([fresh]);
+      }
+    }
+    if (!meta?.channelId) throw new Error("Could not find this video's channel.");
+    const channelId = meta.channelId;
+    const overrides = await load("overrides");
+    await serial(async () => {
+      const follows = await load("follows");
+      follows[channelId] ??= {
+        channelId,
+        name: meta!.channel,
+        lang: resolveLang(videoId, meta!.channel, meta!.detectedLang, overrides),
+        followedAt: Date.now(),
+        checkedAt: null,
+        // The video it was followed from is already known; only other uploads are new.
+        seen: [videoId],
+      };
+      await save("follows", follows);
+    });
+    const added = await checkFeeds(channelId);
+    return { name: meta.channel, added };
+  },
+
+  "channels:unfollow": ({ channelId }) =>
+    serial(async () => {
+      const follows = await load("follows");
+      delete follows[channelId];
+      await save("follows", follows);
+    }),
+
+  "channels:check": async () => ({ added: await checkFeeds() }),
 
   "meta:retry": async () => {
     const targets = await missingDetails(await openVideos());
@@ -471,6 +576,13 @@ const handlers: { [K in RequestKey]: Handler<K> } = {
 export default defineBackground(() => {
   browser.runtime.onInstalled.addListener(() => {
     void injectIntoYouTubeTabs(true);
+  });
+
+  void browser.alarms.get(FEED_ALARM).then((alarm) => {
+    if (!alarm) void browser.alarms.create(FEED_ALARM, { delayInMinutes: 1, periodInMinutes: FEED_EVERY_MINUTES });
+  });
+  browser.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === FEED_ALARM) void checkFeeds();
   });
   browser.runtime.onStartup.addListener(() => {
     void injectIntoYouTubeTabs(false);
