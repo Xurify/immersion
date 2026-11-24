@@ -7,6 +7,8 @@
     lane: LaneKey;
     title: string;
     meta: string;
+    /** Tooltip for the count chip. */
+    metaNote?: string;
     rows: Row[];
     hint: string;
     /** Where the drop placeholder sits, counted among the rows that are not being dragged. */
@@ -22,7 +24,7 @@
     footer?: Snippet;
   }
 
-  let { lane, title, meta, rows, hint, slot, dragId, stop, menuId, targeted, actions, onover, ondrop, top, footer }: Props = $props();
+  let { lane, title, meta, metaNote = "", rows, hint, slot, dragId, stop, menuId, targeted, actions, onover, ondrop, top, footer }: Props = $props();
 
   type Entry = { kind: "slot" } | { kind: "row"; row: Row };
 
@@ -65,7 +67,7 @@
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d={ICON[lane]} fill={lane === "playing" ? "currentColor" : "none"} stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
       {title}
     </h3>
-    {#if meta}<span class="meta">{meta}</span>{/if}
+    {#if meta}<span class="meta" title={metaNote || undefined}>{meta}</span>{/if}
   </header>
 
   {#if top}
@@ -147,9 +149,10 @@
 
   .head {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 4px 8px;
     min-height: 28px;
     margin: 2px 4px 2px;
   }
@@ -201,6 +204,7 @@
     gap: 8px;
     margin: 0 4px;
     font-size: 13px;
+    text-wrap: balance;
   }
 
   .foot {
@@ -226,6 +230,7 @@
     margin: 4px 0;
     font-size: 13px;
     line-height: 1.45;
+    text-wrap: balance;
     color: var(--dim);
   }
 

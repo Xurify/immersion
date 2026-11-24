@@ -103,12 +103,23 @@
   function metaOf(lane: LaneKey): string {
     if (lane === "playing") return playing ? `ends ${endsAt(timeOf(playing) + allNextSeconds, now)}` : "";
     const rows = shownRows[lane];
-    if (lane === "later") return `${rows.length} saved`;
-    if (!rows.length) return "0";
+    if (lane === "later") return rows.length ? `${rows.length} saved` : "";
+    if (!rows.length) return "";
     const unknown = rows.filter((row) => row.duration <= 0).length;
     const known = rows.reduce((sum, row) => sum + (row.duration > 0 ? timeOf(row) : 0), 0);
-    const base = `${rows.length} · ${duration(known)}`;
-    return unknown ? `${base} · ${unknown} without length` : base;
+    if (unknown === rows.length) return `${rows.length} ${rows.length === 1 ? "video" : "videos"}`;
+    // A "+" marks a total that leaves out videos whose length has not arrived; the lane's tooltip gives the count.
+    return `${rows.length} ${rows.length === 1 ? "video" : "videos"} · ${duration(known)}${unknown ? "+" : ""}`;
+  }
+
+  /** Spells out what the "+" in a lane's total leaves out. */
+  function metaNote(lane: LaneKey): string {
+    if (lane === "playing" || lane === "later") return "";
+    const rows = shownRows[lane];
+    const unknown = rows.filter((row) => row.duration <= 0).length;
+    if (!unknown) return "";
+    if (unknown === rows.length) return `${unknown} ${unknown === 1 ? "video has" : "videos have"} no length yet`;
+    return `${unknown} ${unknown === 1 ? "video has" : "videos have"} no length yet, so the total leaves ${unknown === 1 ? "it" : "them"} out`;
   }
 
   function slotFor(lane: LaneKey): number | null {
@@ -421,7 +432,7 @@
       </div>
 
       {#if goals.length}
-        <div class="chips" role="group" aria-label="Filter by language">
+        <div class="chips" class:filtering={activeFilter !== null} role="group" aria-label="Filter by language">
           <button class="goal all" type="button" aria-pressed={activeFilter === null} onclick={() => (filter = null)}>All</button>
           {#each goals as row (row.lang)}
             {@const share = Math.min(100, Math.round((1 - row.leftSeconds / (row.goalMinutes * 60)) * 100))}
@@ -464,6 +475,7 @@
         lane="inbox"
         title={LANE_NAME.inbox}
         meta={metaOf("inbox")}
+        metaNote={metaNote("inbox")}
         rows={shownRows.inbox}
         hint={HINT.inbox}
         slot={slotFor("inbox")}
@@ -486,6 +498,7 @@
         lane="next"
         title={LANE_NAME.next}
         meta={metaOf("next")}
+        metaNote={metaNote("next")}
         rows={shownRows.next}
         hint={HINT.next}
         slot={slotFor("next")}
@@ -538,6 +551,7 @@
         lane="done"
         title={LANE_NAME.done}
         meta={metaOf("done")}
+        metaNote={metaNote("done")}
         rows={shownRows.done}
         hint={HINT.done}
         slot={slotFor("done")}
@@ -554,6 +568,7 @@
         lane="later"
         title={LANE_NAME.later}
         meta={metaOf("later")}
+        metaNote={metaNote("later")}
         rows={shownRows.later}
         hint={HINT.later}
         slot={slotFor("later")}
@@ -672,23 +687,48 @@
     background: var(--raised);
     box-shadow: var(--lift);
     text-align: start;
-    transition: box-shadow 0.15s ease, background-color 0.15s ease;
+    transition: box-shadow 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
   }
 
   .goal:hover {
     box-shadow: 0 0 0 1px var(--line-2), 0 8px 20px -12px var(--shadow);
   }
 
-  .goal[aria-pressed="true"] {
-    box-shadow: 0 0 0 2px var(--ink);
+  .goal:not(.all)[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--c) 14%, var(--raised));
+    box-shadow: 0 0 0 1.5px var(--c), 0 8px 20px -12px var(--c);
   }
 
+  /* While one language is picked, the others step back. */
+  /* While one language is picked, the others drop to an outline; their text stays readable. */
+  .filtering .goal:not([aria-pressed="true"]) {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  .filtering .goal:not([aria-pressed="true"]):hover {
+    box-shadow: inset 0 0 0 1px var(--line-2);
+  }
+
+  .filtering .goal:not([aria-pressed="true"]) .goal-bar {
+    opacity: 0.4;
+  }
+
+  /* "All" matches the other chips while everything is included, and goes quiet once a language is picked. */
   .goal.all {
     min-width: 0;
     align-items: center;
     padding: 0 18px;
     font-size: 14px;
     font-weight: 700;
+  }
+
+  .filtering .goal.all {
+    color: var(--dim);
+  }
+
+  .filtering .goal.all:hover {
+    color: var(--ink);
   }
 
   .goal-top {
@@ -811,12 +851,14 @@
       padding-top: 16px;
     }
 
+    /* Bleeds to the screen edges so rings and shadows are not clipped by the scroller. */
     .chips {
       flex-wrap: nowrap;
-      max-width: 100%;
-      margin-left: 0;
-      padding: 2px;
+      max-width: none;
+      margin: -6px calc(var(--gutter) * -1);
+      padding: 6px var(--gutter) 12px;
       overflow-x: auto;
+      scrollbar-width: none;
     }
 
     .goal {
