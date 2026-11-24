@@ -36,6 +36,9 @@
   const leftMinutes = $derived(minutes(data.leftToday));
   const thisTab = $derived(data.tabs.find((video) => video.tabId === activeTabId));
   const planEmpty = $derived(plan.videos.length === 0);
+  /** Most tabs still lack a length, so any plan built from them would be a guess. */
+  const unreadCount = $derived(data.tabs.filter((video) => video.duration <= 0).length);
+  const reading = $derived(data.tabs.length > 0 && unreadCount * 2 > data.tabs.length);
   const upNextCount = $derived(data.board.columns.next.length);
   const upNextMinutes = $derived(minutes(columnSeconds(data.board, "next")));
   const nowTitle = $derived.by(() => {
@@ -147,19 +150,21 @@
         </div>
       {/if}
 
-      {#if !planEmpty}
+      {#if reading}
+        <p class="note" role="status">Reading details for {unreadCount} {unreadCount === 1 ? "tab" : "tabs"}…</p>
+      {:else if !planEmpty}
         <div class="strip">
           <Strip videos={plan.videos} labels={false} height={12} />
         </div>
       {/if}
 
-      {#if hasGoals}
+      {#if hasGoals && !reading}
         <ul class="bands">
           {#each goalRows as row (row.lang)}
             <LangBand {row} next={tabsFor(row.lang)} onplay={start} />
           {/each}
         </ul>
-      {:else}
+      {:else if !hasGoals}
         <div class="nogoals">
           <p class="note">Set a daily goal to plan your listening.</p>
           <button type="button" class="btn ghost" onclick={() => openDesk("board")}>Set goals</button>
@@ -171,7 +176,7 @@
       {/if}
 
       <div class="actions">
-        {#if planEmpty && !upNextCount}
+        {#if planEmpty && !upNextCount && !reading}
           <p class="note" id="plan-reason">Open YouTube videos in the languages you're learning to plan a session.</p>
         {/if}
         {#if error}
@@ -179,7 +184,7 @@
         {/if}
         {#if upNextCount}
           <button type="button" class="btn" onclick={playUpNext}>Play Up next · {upNextMinutes} min</button>
-        {:else}
+        {:else if !reading}
           <button
             type="button"
             class="btn"

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { clock } from "../../../../lib/format";
-  import { langColor } from "../../../../lib/languages";
+  import { langColor } from "../../../../lib/colors.svelte";
   import { dueLabel, nextDueAt } from "../../../../lib/review";
   import type { Grade, Sentence } from "../../../../lib/types";
   import LangName from "../../../../ui/LangName.svelte";

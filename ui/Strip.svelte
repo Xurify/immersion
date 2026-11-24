@@ -1,6 +1,6 @@
 <script lang="ts">
   import { clock } from "../lib/format";
-  import { langColor } from "../lib/languages";
+  import { langColor } from "../lib/colors.svelte";
   import type { OpenVideo } from "../lib/types";
 
   /** A session drawn to scale: one block per video, width by time left, colour by language. */

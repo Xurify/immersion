@@ -1,7 +1,7 @@
 <script lang="ts">
   import { clock, thumbnail } from "../../../../lib/format";
-  import { COMMON_LANGS, englishName, langColor, nativeName } from "../../../../lib/languages";
-  import { send } from "../../../../lib/messages";
+  import { englishName } from "../../../../lib/languages";
+  import { langColor } from "../../../../lib/colors.svelte";
   import type { OpenVideo } from "../../../../lib/types";
 
   let {
@@ -10,7 +10,7 @@
     longest,
     ontoggle,
     onfocus,
-    onproblem,
+    onsetlang,
   }: {
     video: OpenVideo;
     selected: boolean;
@@ -18,90 +18,94 @@
     longest: number;
     ontoggle: () => void;
     onfocus: () => void;
-    onproblem: (message: string) => void;
+    onsetlang: (anchor: HTMLElement) => void;
   } = $props();
 
   const colour = $derived(langColor(video.lang));
-  const lengthPct = $derived(video.duration > 0 ? (video.duration / longest) * 100 : 0);
-  const seenPct = $derived(video.duration > 0 ? Math.min(100, (video.position / video.duration) * 100) : 0);
-
-  async function setLanguage(event: Event & { currentTarget: HTMLSelectElement }) {
-    const select = event.currentTarget;
-    const lang = select.value;
-    if (!lang) return;
-    try {
-      await send("lang:override", { videoId: video.videoId, channel: video.channel, lang, scope: "channel" });
-    } catch (error) {
-      onproblem(error instanceof Error ? error.message : String(error));
-    }
-    select.value = "";
-  }
+  const known = $derived(video.duration > 0);
+  const lengthPct = $derived(known ? (video.duration / longest) * 100 : 0);
+  const seenPct = $derived(known ? Math.min(100, (video.position / video.duration) * 100) : 0);
 </script>
 
-<li class="row" class:selected style:--c={colour}>
-  <span class="check">
+<li class="card" class:selected style:--c={colour}>
+  <label class="check">
     <input type="checkbox" checked={selected} onchange={() => ontoggle()} aria-label="Select {video.title}" />
-  </span>
+  </label>
 
-  <div class="body">
-    <button class="open" type="button" onclick={() => onfocus()} title="Show this tab">
-      <span class="thumb">
-        <img
-          src={thumbnail(video.videoId)}
-          alt=""
-          loading="lazy"
-          onerror={(event) => {
-            (event.currentTarget as HTMLImageElement).style.visibility = "hidden";
-          }}
-        />
-      </span>
-      <span class="text">
-        <span class="title">{video.title}</span>
-        <span class="meta">
-          <span class="length" aria-hidden="true">
-            <span class="track" style:width="{lengthPct}%"><span class="seen" style:width="{seenPct}%"></span></span>
-          </span>
-          <span>{video.duration > 0 ? clock(video.remaining) : "length unknown"}</span>
-          {#if video.position > 0 && video.duration > 0}
-            <span>· {Math.round(seenPct)}% seen</span>
-          {/if}
-          {#if video.asleep}
-            <span>· asleep</span>
-          {/if}
-        </span>
-      </span>
-    </button>
+  <button class="open" type="button" onclick={() => onfocus()} title="Show this tab">
+    <span class="thumb">
+      <img
+        src={thumbnail(video.videoId)}
+        alt=""
+        loading="lazy"
+        onerror={(event) => {
+          (event.currentTarget as HTMLImageElement).style.visibility = "hidden";
+        }}
+      />
+    </span>
+    <span class="title">{video.title}</span>
+  </button>
 
-    {#if !video.lang}
-      <select class="lang" aria-label="Set language for {video.channel}" onchange={setLanguage}>
-        <option value="">Set language…</option>
-        {#each COMMON_LANGS as code (code)}
-          <option value={code}>{nativeName(code)} · {englishName(code)}</option>
-        {/each}
-      </select>
+  <div class="meta">
+    {#if video.lang}
+      <button
+        type="button"
+        class="lang"
+        title="Wrong language? Change it"
+        aria-label="Language: {englishName(video.lang)}. Change it"
+        onclick={(event) => onsetlang(event.currentTarget)}
+      >
+        <i class="dot" style:background={colour} aria-hidden="true"></i>
+      </button>
+    {:else}
+      <button type="button" class="set" onclick={(event) => onsetlang(event.currentTarget)}>Set language</button>
     {/if}
+
+    {#if known}
+      <span class="time">{clock(video.remaining)} left</span>
+      {#if video.position > 0}<span>{Math.round(seenPct)}% seen</span>{/if}
+    {/if}
+    {#if video.asleep}<span class="tag">Asleep</span>{/if}
   </div>
+
+  {#if known}
+    <span class="bar" aria-hidden="true">
+      <span class="len" style:width="{lengthPct}%"><span class="seen" style:width="{seenPct}%"></span></span>
+    </span>
+  {:else}
+    <span class="bar shimmer" aria-hidden="true"></span>
+  {/if}
 </li>
 
 <style>
-  .row {
-    display: grid;
-    grid-template-columns: 24px minmax(0, 1fr);
-    gap: 4px 6px;
-    align-items: start;
-    padding: 10px 14px 12px 10px;
-    border-top: 1px solid var(--line);
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    padding: 10px;
+    border-radius: var(--r-md);
+    background: var(--raised);
+    box-shadow: 0 0 0 1px var(--line);
   }
 
-  .row.selected {
-    background: color-mix(in srgb, var(--ink) 4%, var(--raised));
+  .card.selected {
+    box-shadow: 0 0 0 2px var(--ink);
   }
 
   .check {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 1;
     display: grid;
     place-items: center;
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: var(--raised);
+    box-shadow: 0 1px 3px var(--shadow);
   }
 
   .check input {
@@ -111,18 +115,11 @@
     accent-color: var(--ink);
   }
 
-  .body {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 0;
-  }
-
   .open {
     display: grid;
     grid-template-columns: 96px minmax(0, 1fr);
     gap: 12px;
-    align-items: center;
+    align-items: start;
     width: 100%;
     padding: 0;
     border: 0;
@@ -154,19 +151,14 @@
     object-fit: cover;
   }
 
-  .text {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-  }
-
   .title {
     display: -webkit-box;
+    min-width: 0;
     overflow: hidden;
-    font-size: 14.5px;
+    font-size: 14px;
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
     line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -177,41 +169,89 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 4px 8px;
+    min-height: 26px;
     color: var(--dim);
     font-size: 12.5px;
     font-variant-numeric: tabular-nums;
   }
 
-  .length {
-    display: block;
-    flex: none;
-    width: 96px;
-    height: 5px;
-    border-radius: 3px;
+  .lang {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    margin-left: -6px;
+    border: 0;
+    border-radius: var(--pill);
+    background: transparent;
   }
 
-  .track {
+  .lang:hover {
+    background: var(--soft);
+  }
+
+  .lang .dot {
+    width: 12px;
+    height: 12px;
+  }
+
+  .set {
+    min-height: 1.75rem;
+    padding: 0 0.7rem;
+    border: 1.5px solid var(--line);
+    border-radius: var(--pill);
+    background: var(--raised);
+    color: var(--ink);
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  .set:hover {
+    border-color: var(--ink);
+  }
+
+  .tag {
+    padding: 0 7px;
+    border-radius: var(--pill);
+    background: var(--soft);
+    font-size: 11.5px;
+    line-height: 1.6;
+  }
+
+  .bar {
+    display: block;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--soft);
+    overflow: hidden;
+  }
+
+  .len {
     display: block;
     height: 100%;
-    max-width: 100%;
-    border-radius: 3px;
+    border-radius: 2px;
     background: color-mix(in srgb, var(--c) 28%, var(--soft));
   }
 
   .seen {
     display: block;
     height: 100%;
-    border-radius: 3px;
+    border-radius: 2px;
     background: var(--c);
   }
 
-  .lang {
-    justify-self: start;
-    min-height: 2.25rem;
-    padding: 0 10px;
-    border: 1.5px solid var(--line);
-    border-radius: var(--pill);
-    background: var(--raised);
-    font-size: 13px;
+  .shimmer {
+    background: linear-gradient(90deg, var(--soft) 0%, color-mix(in srgb, var(--line) 80%, var(--soft)) 50%, var(--soft) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    from {
+      background-position: 100% 0;
+    }
+    to {
+      background-position: -100% 0;
+    }
   }
 </style>

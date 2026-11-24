@@ -2,13 +2,22 @@
   import { tick } from "svelte";
   import { data } from "../../../lib/data.svelte";
   import { asPlannable, columnSeconds, move, remove as removeCard, upsert, type Board as BoardState, type Column } from "../../../lib/board";
-  import { endsAt, minutes } from "../../../lib/format";
-  import { englishName, langColor } from "../../../lib/languages";
+  import { duration, endsAt, minutes } from "../../../lib/format";
+  import { englishName } from "../../../lib/languages";
+  import { langColor } from "../../../lib/colors.svelte";
   import { send } from "../../../lib/messages";
   import { defaultBudget, planSession } from "../../../lib/plan";
   import LangName from "../../../ui/LangName.svelte";
   import Lane from "../components/board/Lane.svelte";
   import { LANES, LANE_NAME, buildLanes, timeOf, type CardActions, type LaneKey, type Row } from "../components/board/rows";
+  import SetLanguagePopover from "../components/SetLanguagePopover.svelte";
+
+  interface LangTarget {
+    videoId: string;
+    channel: string;
+    title: string;
+    anchor: HTMLElement;
+  }
 
   interface Props {
     onnavigate: (id: "board" | "videos" | "review" | "history") => void;
@@ -32,6 +41,7 @@
   let dragId = $state<string | null>(null);
   let slot = $state<{ lane: LaneKey; at: number } | null>(null);
   let menuId = $state<string | null>(null);
+  let langTarget = $state<LangTarget | null>(null);
   let stops = $state<Partial<Record<LaneKey, string>>>({});
   let problem = $state("");
   let announcement = $state("");
@@ -43,6 +53,7 @@
   const board = $derived(optimistic ?? data.board);
   const lanes = $derived(buildLanes(board, data.tabs, data.playing?.videoId ?? null));
   const goals = $derived(data.progress.filter((row) => row.goalMinutes > 0));
+  const goalLangs = $derived(Object.keys(data.goals));
   const activeFilter = $derived(filter && goals.some((row) => row.lang === filter) ? filter : null);
   const shownRows = $derived.by(() => {
     const keep = (row: Row) => !activeFilter || row.lang === activeFilter;
@@ -94,7 +105,10 @@
     const rows = shownRows[lane];
     if (lane === "later") return `${rows.length} saved`;
     if (!rows.length) return "0";
-    return `${rows.length} · ${minutes(rows.reduce((sum, row) => sum + timeOf(row), 0))} min`;
+    const unknown = rows.filter((row) => row.duration <= 0).length;
+    const known = rows.reduce((sum, row) => sum + (row.duration > 0 ? timeOf(row) : 0), 0);
+    const base = `${rows.length} · ${duration(known)}`;
+    return unknown ? `${base} · ${unknown} without length` : base;
   }
 
   function slotFor(lane: LaneKey): number | null {
@@ -368,6 +382,10 @@
       menuId = null;
       void place(row, column);
     },
+    setLang: (row, anchor) => {
+      menuId = null;
+      langTarget = { videoId: row.videoId, channel: row.card.channel, title: row.title, anchor };
+    },
     remove: (row) => void remove(row),
     menu: (row) => {
       menuId = menuId === row.videoId ? null : row.videoId;
@@ -549,6 +567,17 @@
         {/snippet}
       </Lane>
     </div>
+
+    {#if langTarget}
+      <SetLanguagePopover
+        videoId={langTarget.videoId}
+        channel={langTarget.channel}
+        title={langTarget.title}
+        anchor={langTarget.anchor}
+        suggested={goalLangs}
+        onclose={() => (langTarget = null)}
+      />
+    {/if}
 
     <p class="sr-only" aria-live="polite">{announcement}</p>
   {/if}

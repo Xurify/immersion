@@ -10,6 +10,8 @@ export interface VideoMeta {
   duration: number;
   /** Detected spoken language, before any override. */
   detectedLang: Lang | null;
+  /** "text" is a guess from the title, so captions or audio data can replace it. */
+  langSource?: "captions" | "text";
 }
 
 /** An open YouTube tab as the pages see it. */

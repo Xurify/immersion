@@ -1,7 +1,8 @@
 <script lang="ts">
   import LangName from "../../../ui/LangName.svelte";
   import { minutes } from "../../../lib/format";
-  import { isCjk, langColor, nativeName } from "../../../lib/languages";
+  import { isCjk, nativeName } from "../../../lib/languages";
+  import { langColor } from "../../../lib/colors.svelte";
   import type { LangProgress } from "../../../lib/plan";
   import type { OpenVideo } from "../../../lib/types";
 

@@ -4,6 +4,7 @@
   import { send } from "../../../lib/messages";
   import { load, save } from "../../../lib/storage";
   import type { OpenVideo, ReadingItem, Session } from "../../../lib/types";
+  import SetLanguagePopover from "../components/SetLanguagePopover.svelte";
   import LanguageColumn from "../components/videos/LanguageColumn.svelte";
   import MixBar from "../components/videos/MixBar.svelte";
   import { mixOf } from "../components/videos/mix";
@@ -16,6 +17,13 @@
     lang: string | null;
     videos: OpenVideo[];
     seconds: number;
+    loading: number;
+  }
+  interface LangTarget {
+    videoId: string;
+    channel: string;
+    title: string;
+    anchor: HTMLElement;
   }
 
   let source = $state<Source>("open");
@@ -24,15 +32,19 @@
   let selected = $state(new Set<number>());
   let reading = $state<ReadingItem[] | null>(null);
   let problem = $state("");
+  let langTarget = $state<LangTarget | null>(null);
 
   const tabs = $derived(data.tabs);
   const needle = $derived(query.trim().toLowerCase());
   const matches = (...fields: string[]) => !needle || fields.some((field) => field.toLowerCase().includes(needle));
 
   const visible = $derived(tabs.filter((video) => matches(video.title, video.channel)));
-  const totalSeconds = $derived(tabs.reduce((sum, video) => sum + video.remaining, 0));
+  const loadingCount = $derived(tabs.filter((video) => video.duration <= 0).length);
+  const knownCount = $derived(tabs.length - loadingCount);
+  const totalSeconds = $derived(tabs.reduce((sum, video) => sum + (video.duration > 0 ? video.remaining : 0), 0));
   const longest = $derived(tabs.reduce((max, video) => Math.max(max, video.duration), 1));
   const mix = $derived(mixOf(tabs.map((video) => ({ lang: video.lang, seconds: video.remaining }))));
+  const goalLangs = $derived(Object.keys(data.goals));
 
   // Goal languages first in goal order, then the rest by time, with unknown language last.
   const groups = $derived.by(() => {
@@ -41,14 +53,22 @@
     const goalOrder = Object.keys(data.goals);
     const rank = (group: Group) => (group.lang === null ? 2 : goalOrder.includes(group.lang) ? 0 : 1);
     return [...byLang]
-      .map(([lang, videos]): Group => ({ lang, videos, seconds: videos.reduce((sum, video) => sum + video.remaining, 0) }))
+      .map(
+        ([lang, videos]): Group => ({
+          lang,
+          videos,
+          seconds: videos.reduce((sum, video) => sum + (video.duration > 0 ? video.remaining : 0), 0),
+          loading: videos.filter((video) => video.duration <= 0).length,
+        }),
+      )
       .sort(
         (a, b) =>
           rank(a) - rank(b) ||
           (rank(a) === 0 ? goalOrder.indexOf(a.lang ?? "") - goalOrder.indexOf(b.lang ?? "") : b.seconds - a.seconds),
       );
   });
-  const stacked = $derived(groups.length >= 4);
+  // Two or three groups sit side by side; one group or four or more run full width.
+  const sideBySide = $derived(groups.length >= 2 && groups.length <= 3);
 
   const screen = $derived(groups.flatMap((group) => group.videos));
   // Selection survives a search: hidden picks still count, in on-screen order.
@@ -94,6 +114,10 @@
 
   function focus(video: OpenVideo) {
     void call(send("tabs:focus", { tabId: video.tabId }));
+  }
+
+  function setLanguage(video: OpenVideo, anchor: HTMLElement) {
+    langTarget = langTarget?.anchor === anchor ? null : { videoId: video.videoId, channel: video.channel, title: video.title, anchor };
   }
 
   function startPicked() {
@@ -160,8 +184,14 @@
 
     <header class="top">
       <div class="total">
-        <p class="big">{hoursClock(totalSeconds)}<span class="unit">h</span></p>
-        <p class="dim">in {tabs.length} open {tabs.length === 1 ? "tab" : "tabs"}</p>
+        {#if knownCount > 0}
+          <p class="big">{hoursClock(totalSeconds)}<span class="unit">h</span></p>
+        {:else if tabs.length}
+          <p class="reading-now">Reading video details…</p>
+        {/if}
+        <p class="dim">
+          in {tabs.length} open {tabs.length === 1 ? "tab" : "tabs"}{knownCount > 0 && loadingCount ? ` · + ${loadingCount} still loading` : ""}
+        </p>
       </div>
 
       <div class="tools">
@@ -206,18 +236,19 @@
       {:else if !groups.length}
         <p class="empty dim">No open videos match “{query}”.</p>
       {:else}
-        <div class:columns={!stacked} class:stack={stacked}>
+        <div class:columns={sideBySide} class:stack={!sideBySide}>
           {#each groups as group (group.lang ?? "unknown")}
             <LanguageColumn
               lang={group.lang}
               videos={group.videos}
               seconds={group.seconds}
-              {stacked}
+              loading={group.loading}
+              wide={!sideBySide || group.videos.length > 8}
               {longest}
               {selected}
               ontoggle={toggle}
               onfocus={focus}
-              onproblem={(message) => (problem = message)}
+              onsetlang={setLanguage}
             />
           {/each}
         </div>
@@ -250,6 +281,17 @@
       {/if}
     {/if}
 
+    {#if langTarget}
+      <SetLanguagePopover
+        videoId={langTarget.videoId}
+        channel={langTarget.channel}
+        title={langTarget.title}
+        anchor={langTarget.anchor}
+        suggested={goalLangs}
+        onclose={() => (langTarget = null)}
+      />
+    {/if}
+
     {#if source === "open" && picked.length}
       <SelectionBar count={picked.length} seconds={pickedSeconds} onsave={saveSession} onclose={closePicked} onstart={startPicked} />
     {/if}
@@ -273,17 +315,27 @@
 
   .total {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-end;
-    gap: 16px;
+    gap: 4px 16px;
   }
 
   .total .big {
     margin: 0;
     font-size: clamp(64px, 8vw, 84px);
+    line-height: 0.8;
   }
 
   .total .unit {
     font-size: 0.38em;
+  }
+
+  .reading-now {
+    margin: 0;
+    font-size: clamp(28px, 3.5vw, 40px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
   }
 
   .total p.dim {
@@ -305,6 +357,10 @@
     gap: 6px;
   }
 
+  .sources .pill {
+    white-space: nowrap;
+  }
+
   .sources .count {
     color: inherit;
     opacity: 0.7;
@@ -317,8 +373,9 @@
 
   .columns {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+    align-items: start;
+    gap: 14px;
   }
 
   .stack {

@@ -14,7 +14,8 @@ const FIXED: Record<string, number> = {
 
 export const UNKNOWN_COLOR = "#6f6a60";
 
-export function langColor(lang: Lang | null | undefined): string {
+/** A language's usual colour. Pages use langColor from colors.svelte.ts, which keeps goal languages apart. */
+export function baseColor(lang: Lang | null | undefined): string {
   if (!lang) return UNKNOWN_COLOR;
   const slot = FIXED[lang];
   if (slot != null) return PALETTE[slot]!;

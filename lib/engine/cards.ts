@@ -59,8 +59,10 @@ export function fillCard(board: Board, videoId: string, meta: VideoMeta | undefi
   if (!card) return board;
   const lang = card.lang ?? resolveLang(videoId, meta?.channel ?? card.channel, meta?.detectedLang ?? null, overrides);
   const duration = card.duration || meta?.duration || 0;
-  if (lang === card.lang && duration === card.duration) return board;
-  return { ...board, cards: { ...board.cards, [videoId]: { ...card, lang, duration } } };
+  const title = card.title || meta?.title || "";
+  const channel = card.channel || meta?.channel || "";
+  if (lang === card.lang && duration === card.duration && title === card.title && channel === card.channel) return board;
+  return { ...board, cards: { ...board.cards, [videoId]: { ...card, lang, duration, title, channel } } };
 }
 
 /** The open videos a stash closes: the given ones (or all), minus the tabs that must stay open. */

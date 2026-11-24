@@ -11,6 +11,7 @@ export interface PlayerResponse {
     lengthSeconds?: string;
     isLive?: boolean;
     defaultAudioLanguageCode?: string;
+    shortDescription?: string;
   };
   microformat?: { playerMicroformatRenderer?: { defaultAudioLanguage?: string } };
   captions?: {
@@ -28,6 +29,7 @@ export interface PlayerResponse {
 
 interface AudioLabel {
   id?: string;
+  displayName?: string;
   audioIsDefault?: boolean;
   isAutoDubbed?: boolean;
 }
@@ -37,6 +39,11 @@ function codeOf(audioTrackId: string | undefined): string | undefined {
   return audioTrackId?.split(".")[0];
 }
 
+/**
+ * The original audio's language. Auto-dubbed tracks are skipped: with an English
+ * interface YouTube makes its English dub the default track, so "default" alone
+ * would call a Russian interview English.
+ */
 function originalAudioCode(response: PlayerResponse): string | undefined {
   const streaming = response.streamingData;
   const tracks = new Map<string, AudioLabel>();
@@ -44,21 +51,36 @@ function originalAudioCode(response: PlayerResponse): string | undefined {
     const track = format.audioTrack;
     if (track?.id) tracks.set(track.id, track);
   }
-  const all = [...tracks.values()];
-  const originals = all.filter((track) => !track.isAutoDubbed);
+  const originals = [...tracks.values()].filter((track) => !track.isAutoDubbed);
+  if (originals.length === 0) return undefined;
   const original =
-    all.find((track) => track.audioIsDefault) ??
-    (all.some((track) => track.isAutoDubbed) && originals.length === 1 ? originals[0] : undefined);
+    originals.find((track) => /original/i.test(track.displayName ?? "")) ??
+    (originals.length === 1 ? originals[0] : originals.find((track) => track.audioIsDefault));
   return codeOf(original?.id);
+}
+
+function dubbedTrackIds(response: PlayerResponse): Set<string> {
+  const streaming = response.streamingData;
+  const ids = [...(streaming?.formats ?? []), ...(streaming?.adaptiveFormats ?? [])].flatMap((format) =>
+    format.audioTrack?.isAutoDubbed && format.audioTrack.id ? [format.audioTrack.id] : [],
+  );
+  return new Set(ids);
 }
 
 function defaultAudioTrackCode(response: PlayerResponse): string | undefined {
   const renderer = response.captions?.playerCaptionsTracklistRenderer;
   const index = renderer?.defaultAudioTrackIndex;
-  return codeOf(typeof index === "number" ? renderer?.audioTracks?.[index]?.audioTrackId : undefined);
+  const id = typeof index === "number" ? renderer?.audioTracks?.[index]?.audioTrackId : undefined;
+  return id && !dubbedTrackIds(response).has(id) ? codeOf(id) : undefined;
 }
 
-/** Caption tracks are a weaker guess: auto-generated tracks can name the wrong language. */
+/** Auto-generated captions are transcribed from the original audio, so a single one names the spoken language. */
+function speechRecognitionCode(response: PlayerResponse): string | undefined {
+  const asr = (response.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? []).filter((track) => track.kind === "asr" && track.languageCode);
+  return asr.length === 1 ? asr[0]?.languageCode : undefined;
+}
+
+/** Manual captions are a weaker guess: channels often upload translations. */
 function captionCode(response: PlayerResponse): string | undefined {
   const tracks = (response.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? []).filter((track) => track.languageCode);
   if (tracks.length === 1) return tracks[0]?.languageCode;
@@ -71,18 +93,40 @@ export function detectLanguage(response: PlayerResponse | null | undefined): Lan
   if (!response) return null;
   const details = response.videoDetails;
   const hint = details?.defaultAudioLanguageCode ?? response.microformat?.playerMicroformatRenderer?.defaultAudioLanguage;
-  return baseLang(originalAudioCode(response) ?? defaultAudioTrackCode(response) ?? hint ?? captionCode(response) ?? null);
+  return baseLang(originalAudioCode(response) ?? speechRecognitionCode(response) ?? defaultAudioTrackCode(response) ?? hint ?? captionCode(response) ?? null);
 }
 
 /** The metadata for the video the player response describes, or null when it has no video id. */
 export function metaFromPlayerResponse(response: PlayerResponse | null | undefined): VideoMeta | null {
   const details = response?.videoDetails;
   if (!details?.videoId) return null;
+  const detectedLang = detectLanguage(response);
   return {
     videoId: details.videoId,
     title: cleanTitle(details.title ?? ""),
     channel: details.author ?? "",
     duration: details.isLive ? 0 : Number(details.lengthSeconds) || 0,
-    detectedLang: detectLanguage(response),
+    detectedLang,
+    langSource: detectedLang ? "captions" : undefined,
+  };
+}
+
+/** Rank of what a meta says about language: captions beat a text guess, and either beats none. */
+function langRank(meta: VideoMeta): number {
+  if (!meta.detectedLang) return 0;
+  return meta.langSource === "text" ? 1 : 2;
+}
+
+/** Combines a stored meta with a fresh one: a non-empty value wins, and a higher-ranked language stays. */
+export function mergeMeta(previous: VideoMeta | undefined, incoming: VideoMeta): VideoMeta {
+  if (!previous) return incoming;
+  const keep = langRank(previous) > langRank(incoming) ? previous : incoming;
+  return {
+    videoId: incoming.videoId,
+    title: incoming.title || previous.title,
+    channel: incoming.channel || previous.channel,
+    duration: incoming.duration || previous.duration,
+    detectedLang: keep.detectedLang,
+    langSource: keep.langSource,
   };
 }

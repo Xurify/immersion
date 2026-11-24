@@ -1,6 +1,6 @@
 import { videoIdOf } from "../../lib/format";
 import { send, type RequestKey, type Requests, type TabCommands } from "../../lib/messages";
-import { BRIDGE, captionLine, isTypingTarget } from "../../lib/engine/page";
+import { BRIDGE, LIVE_FLAG, captionLine, isTypingTarget } from "../../lib/engine/page";
 import { showToast } from "../../lib/engine/toast";
 import { cleanTitle } from "../../lib/engine/title";
 import type { VideoMeta } from "../../lib/types";
@@ -21,6 +21,9 @@ const CLIP_SEEK_SLACK_S = 2;
 export default defineContentScript({
   matches: ["https://www.youtube.com/*"],
   main() {
+    const live = window as unknown as Record<string, (() => void) | undefined>;
+    live[LIVE_FLAG]?.();
+
     let alive = true;
     let video: HTMLVideoElement | null = null;
     let meta: VideoMeta | null = null;
@@ -33,9 +36,11 @@ export default defineContentScript({
 
     function stop() {
       alive = false;
+      clip = null;
       window.clearInterval(timer);
       captions.disconnect();
     }
+    live[LIVE_FLAG] = stop;
 
     function guard(error: unknown) {
       if (String(error).includes("invalidated") || !browser.runtime?.id) stop();
@@ -77,6 +82,7 @@ export default defineContentScript({
     }
 
     function onNavigate() {
+      if (!alive) return;
       meta = null;
       reportedFor = null;
       attachVideo();

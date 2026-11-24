@@ -1,6 +1,6 @@
 <script lang="ts">
   import { hoursClock } from "../../../../lib/format";
-  import { langColor } from "../../../../lib/languages";
+  import { langColor } from "../../../../lib/colors.svelte";
   import type { DayStatus, LangSummary } from "../../../../lib/stats";
   import type { Goals } from "../../../../lib/types";
   import LangName from "../../../../ui/LangName.svelte";

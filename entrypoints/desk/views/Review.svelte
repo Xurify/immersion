@@ -1,7 +1,8 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import { data } from "../../../lib/data.svelte";
-  import { englishName, langColor } from "../../../lib/languages";
+  import { englishName } from "../../../lib/languages";
+  import { langColor } from "../../../lib/colors.svelte";
   import { send } from "../../../lib/messages";
   import { dueLabel, dueSentences, isLearned } from "../../../lib/review";
   import { load, save } from "../../../lib/storage";

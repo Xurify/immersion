@@ -5,12 +5,16 @@ import { load, loadSession, save, saveSession } from "../lib/storage";
 import type { Requests, RequestKey } from "../lib/messages";
 import { cardFromTab, move, pruneDone, remove, resumeUrl, setPosition, upsert, type Board, type Card } from "../lib/board";
 import { listenedSeconds } from "../lib/engine/listening";
+import { createEnrich, needsMeta } from "../lib/engine/enrich";
+import { injectIntoYouTubeTabs } from "../lib/engine/inject";
+import { mergeMeta } from "../lib/engine/player";
+import { withTextLang } from "../lib/engine/textLang";
 import { flushPending, focusTab, forgetTab, runInTab, type TabCommand } from "../lib/engine/play";
 import { serial } from "../lib/engine/serial";
 import { advanceSession, dropFromSession, startSession } from "../lib/engine/session";
 import { backToNext, fillCard, finishCard, placeCard, refreshCard, startCard, stashTargets, type Playing } from "../lib/engine/cards";
 import { buildOpenVideos, resolveLang } from "../lib/engine/tabs";
-import type { OpenVideo, ReadingItem } from "../lib/types";
+import type { OpenVideo, ReadingItem, VideoMeta } from "../lib/types";
 
 type Sender = Browser.runtime.MessageSender;
 type Handler<K extends RequestKey> = (payload: Requests[K]["req"], sender: Sender) => Promise<Requests[K]["res"]>;
@@ -47,6 +51,22 @@ async function openVideos(): Promise<OpenVideo[]> {
   ]);
   return buildOpenVideos(tabs, { meta, live, overrides });
 }
+
+/** Enrichment results: one serial write for the batch's metadata, then the board cards that still lack a language or length. */
+async function saveFound(found: VideoMeta[]): Promise<void> {
+  await serial(async () => {
+    const metas = await load("meta");
+    for (const meta of found) metas[meta.videoId] = mergeMeta(metas[meta.videoId], meta);
+    await save("meta", metas);
+    const [overrides, board] = await Promise.all([load("overrides"), load("board")]);
+    let updated = board;
+    for (const meta of found) updated = fillCard(updated, meta.videoId, metas[meta.videoId], overrides);
+    if (updated !== board) await writeBoard(updated);
+  });
+}
+
+const enrich = createEnrich(saveFound);
+let injected = false;
 
 async function audibleFocusedTabIds(): Promise<number[]> {
   const tabs = await browser.tabs.query({ active: true, lastFocusedWindow: true, audible: true });
@@ -123,7 +143,20 @@ async function advance(playing: Playing): Promise<void> {
 }
 
 const handlers: { [K in RequestKey]: Handler<K> } = {
-  "tabs:list": () => openVideos(),
+  "tabs:list": async () => {
+    if (!injected) {
+      injected = true;
+      void injectIntoYouTubeTabs(false);
+    }
+    const [videos, board, meta] = await Promise.all([openVideos(), load("board"), load("meta")]);
+    void enrich.enqueue([
+      ...videos.filter((video) => needsMeta(video)).map((video) => ({ videoId: video.videoId, tabId: video.tabId })),
+      ...Object.values(board.cards)
+        .filter((card) => (!card.lang || !card.duration) && needsMeta(meta[card.videoId]))
+        .map((card) => ({ videoId: card.videoId })),
+    ]);
+    return videos;
+  },
 
   "tabs:focus": ({ tabId }) => focusTab(tabId),
 
@@ -276,15 +309,15 @@ const handlers: { [K in RequestKey]: Handler<K> } = {
         );
       }
       if (added > 0) await writeBoard(board);
+      void enrich.enqueue(unread.filter((item) => needsMeta(metas[item.videoId])).map((item) => ({ videoId: item.videoId })));
       for (const item of unread) await browser.readingList.updateEntry({ url: item.url, hasBeenRead: true });
       return { added };
     }),
 
   "yt:meta": (meta, sender) =>
     serial(async () => {
-      const metas = await load("meta");
-      const previous = metas[meta.videoId];
-      metas[meta.videoId] = { ...meta, detectedLang: meta.detectedLang ?? previous?.detectedLang ?? null };
+      const [metas, goals] = await Promise.all([load("meta"), load("goals")]);
+      metas[meta.videoId] = mergeMeta(metas[meta.videoId], withTextLang(meta, undefined, Object.keys(goals)));
       await save("meta", metas);
 
       const board = await load("board");
@@ -368,6 +401,13 @@ const handlers: { [K in RequestKey]: Handler<K> } = {
 };
 
 export default defineBackground(() => {
+  browser.runtime.onInstalled.addListener(() => {
+    void injectIntoYouTubeTabs(true);
+  });
+  browser.runtime.onStartup.addListener(() => {
+    void injectIntoYouTubeTabs(false);
+  });
+
   browser.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
     const { type, payload } = (message ?? {}) as { type?: unknown; payload?: unknown };
     if (typeof type !== "string" || !Object.hasOwn(handlers, type)) return false;

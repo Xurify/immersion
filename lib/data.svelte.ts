@@ -1,6 +1,7 @@
 import { dateKey } from "./format";
 import { send } from "./messages";
 import { progressToday, type LangProgress } from "./plan";
+import { setGoalLanguages } from "./colors.svelte";
 import { emptyBoard, pruneDone, type Board } from "./board";
 import { load, loadSession, watch, type SessionShape } from "./storage";
 import type { Goals, ListenLog, OpenVideo, Sentence, Session } from "./types";
@@ -46,6 +47,7 @@ class Data {
     ]);
     this.board = pruneDone(board);
     this.playing = playing;
+    setGoalLanguages(Object.keys(goals));
     this.goals = goals;
     this.log = log;
     this.sentences = sentences;

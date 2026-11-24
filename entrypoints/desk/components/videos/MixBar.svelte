@@ -1,6 +1,7 @@
 <script lang="ts">
   import { duration } from "../../../../lib/format";
-  import { englishName, langColor } from "../../../../lib/languages";
+  import { englishName } from "../../../../lib/languages";
+  import { langColor } from "../../../../lib/colors.svelte";
   import type { MixPart } from "./mix";
 
   let { parts, height = 12 }: { parts: MixPart[]; height?: number } = $props();

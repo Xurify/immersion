@@ -1,6 +1,6 @@
 <script lang="ts">
   import { duration } from "../../../../lib/format";
-  import { langColor } from "../../../../lib/languages";
+  import { langColor } from "../../../../lib/colors.svelte";
   import type { RangeSummary } from "../../../../lib/stats";
 
   let { summary, goalSeconds }: { summary: RangeSummary; goalSeconds: number } = $props();

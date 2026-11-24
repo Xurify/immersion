@@ -1,6 +1,7 @@
 <script lang="ts">
   import { clock, thumbnail } from "../../../../lib/format";
-  import { englishName, langColor } from "../../../../lib/languages";
+  import { englishName } from "../../../../lib/languages";
+  import { langColor } from "../../../../lib/colors.svelte";
   import type { Column } from "../../../../lib/board";
   import { MOVE_LABEL, timeOf, type CardActions, type Row } from "./rows";
 
@@ -15,16 +16,24 @@
   const COLUMNS: Column[] = ["next", "inbox", "later", "done"];
 
   let thumbFailed = $state(false);
+  let cardEl = $state<HTMLLIElement>();
   const colour = $derived(langColor(row.lang));
   const gradient = $derived(`linear-gradient(135deg, ${colour}, color-mix(in srgb, ${colour} 45%, #000))`);
   const playing = $derived(row.lane === "playing");
   const percent = $derived(row.duration > 0 ? Math.min(100, (row.position / row.duration) * 100) : 0);
-  const time = $derived(
-    row.lane === "done" ? clock(row.duration) : `${clock(row.left)}${row.position > 0 ? " left" : ""}`,
-  );
+  // Zero length means the video's details never arrived; a dash reads better than 0:00.
+  const time = $derived.by(() => {
+    if (row.duration <= 0) return "—";
+    return row.lane === "done" ? clock(row.duration) : `${clock(row.left)}${row.position > 0 ? " left" : ""}`;
+  });
+
+  function setLang() {
+    if (cardEl) actions.setLang(row, cardEl);
+  }
 </script>
 
 <li
+  bind:this={cardEl}
   class="card"
   class:now={playing}
   class:done={row.lane === "done"}
@@ -77,6 +86,7 @@
   {#if menuOpen}
     <div class="menu">
       <button type="button" onclick={() => actions.play(row)}>Play now</button>
+      <button type="button" onclick={setLang}>Set language</button>
       {#each COLUMNS as column (column)}
         {#if column !== row.source}
           <button type="button" onclick={() => actions.move(row, column)}>Move to {MOVE_LABEL[column]}</button>

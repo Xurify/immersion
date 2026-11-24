@@ -37,6 +37,7 @@ export interface CardActions {
   open: (row: Row) => void;
   play: (row: Row) => void;
   move: (row: Row, column: Column) => void;
+  setLang: (row: Row, anchor: HTMLElement) => void;
   remove: (row: Row) => void;
   menu: (row: Row) => void;
   key: (event: KeyboardEvent, row: Row) => void;

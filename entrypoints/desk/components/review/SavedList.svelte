@@ -1,6 +1,7 @@
 <script lang="ts">
   import { data } from "../../../../lib/data.svelte";
-  import { englishName, langColor } from "../../../../lib/languages";
+  import { englishName } from "../../../../lib/languages";
+  import { langColor } from "../../../../lib/colors.svelte";
   import { isLearned } from "../../../../lib/review";
   import { load, save } from "../../../../lib/storage";
   import type { Sentence } from "../../../../lib/types";

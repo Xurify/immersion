@@ -1,6 +1,7 @@
 <script lang="ts">
   import { dateKey, duration } from "../../../../lib/format";
-  import { englishName, langColor } from "../../../../lib/languages";
+  import { englishName } from "../../../../lib/languages";
+  import { langColor } from "../../../../lib/colors.svelte";
   import type { RangeSummary } from "../../../../lib/stats";
 
   let { summary, goalSeconds }: { summary: RangeSummary; goalSeconds: number } = $props();
