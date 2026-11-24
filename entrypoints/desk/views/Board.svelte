@@ -51,7 +51,7 @@
   let now = $state(Date.now());
 
   const board = $derived(optimistic ?? data.board);
-  const lanes = $derived(buildLanes(board, data.tabs, data.playing?.videoId ?? null));
+  const lanes = $derived(buildLanes(board, data.tabs, data.playing?.videoId ?? null, data.watched));
   const goals = $derived(data.progress.filter((row) => row.goalMinutes > 0));
   const goalLangs = $derived(Object.keys(data.goals));
   const activeFilter = $derived(filter && goals.some((row) => row.lang === filter) ? filter : null);
@@ -105,6 +105,11 @@
     const rows = shownRows[lane];
     if (lane === "later") return rows.length ? `${rows.length} saved` : "";
     if (!rows.length) return "";
+    const count = `${rows.length} ${rows.length === 1 ? "video" : "videos"}`;
+    if (lane === "done") {
+      const watched = rows.reduce((sum, row) => sum + row.watched, 0);
+      return watched >= 30 ? `${count} · ${duration(watched)} watched` : count;
+    }
     const unknown = rows.filter((row) => row.duration <= 0).length;
     const known = rows.reduce((sum, row) => sum + (row.duration > 0 ? timeOf(row) : 0), 0);
     if (unknown === rows.length) return `${rows.length} ${rows.length === 1 ? "video" : "videos"}`;
@@ -114,7 +119,7 @@
 
   /** Spells out what the "+" in a lane's total leaves out. */
   function metaNote(lane: LaneKey): string {
-    if (lane === "playing" || lane === "later") return "";
+    if (lane === "playing" || lane === "later" || lane === "done") return "";
     const rows = shownRows[lane];
     const unknown = rows.filter((row) => row.duration <= 0).length;
     if (!unknown) return "";

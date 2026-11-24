@@ -363,6 +363,9 @@ const handlers: { [K in RequestKey]: Handler<K> } = {
 
       const seconds = listenedSeconds(previous, { videoId, playing, at });
       if (seconds <= 0) return;
+      const watched = await load("watched");
+      watched[videoId] = (watched[videoId] ?? 0) + seconds;
+      await save("watched", watched);
       const [meta, overrides] = await Promise.all([load("meta"), load("overrides")]);
       const lang = resolveLang(videoId, meta[videoId]?.channel ?? "", meta[videoId]?.detectedLang ?? null, overrides);
       if (!lang) return;

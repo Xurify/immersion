@@ -31,6 +31,8 @@ export interface Row {
   left: number;
   position: number;
   duration: number;
+  /** Seconds actually played. */
+  watched: number;
 }
 
 export interface CardActions {
@@ -47,11 +49,12 @@ export interface CardActions {
 }
 
 /** Done cards keep their watched time out of the total, so they show the full length. */
+/** Done counts what was actually played; every other lane, what is left to play. */
 export function timeOf(row: Row): number {
-  return row.lane === "done" ? row.duration : row.left;
+  return row.lane === "done" ? row.watched : row.left;
 }
 
-function rowOf(card: Card, tab: OpenVideo | null, source: Column | null, lane: LaneKey): Row {
+function rowOf(card: Card, tab: OpenVideo | null, source: Column | null, lane: LaneKey, watched: Record<string, number>): Row {
   return {
     videoId: card.videoId,
     title: card.title || tab?.title || "Untitled video",
@@ -63,11 +66,17 @@ function rowOf(card: Card, tab: OpenVideo | null, source: Column | null, lane: L
     left: tab ? tab.remaining : remaining(card),
     position: tab ? tab.position : card.position,
     duration: tab?.duration || card.duration,
+    watched: watched[card.videoId] ?? 0,
   };
 }
 
 /** Splits the board and open tabs into lanes. Open tabs without a card show in Inbox. */
-export function buildLanes(board: Board, tabs: OpenVideo[], playingId: string | null): Record<LaneKey, Row[]> {
+export function buildLanes(
+  board: Board,
+  tabs: OpenVideo[],
+  playingId: string | null,
+  watched: Record<string, number> = {},
+): Record<LaneKey, Row[]> {
   const tabByVideo = new Map<string, OpenVideo>();
   for (const tab of tabs) if (!tabByVideo.has(tab.videoId)) tabByVideo.set(tab.videoId, tab);
 
@@ -79,19 +88,19 @@ export function buildLanes(board: Board, tabs: OpenVideo[], playingId: string | 
       if (!card) continue;
       stored.add(videoId);
       if (videoId === playingId) continue;
-      lanes[column].push(rowOf(card, tabByVideo.get(videoId) ?? null, column, column));
+      lanes[column].push(rowOf(card, tabByVideo.get(videoId) ?? null, column, column, watched));
     }
   }
 
   if (playingId) {
     const tab = tabByVideo.get(playingId) ?? null;
     const card = board.cards[playingId] ?? (tab ? cardFromTab(tab) : null);
-    if (card) lanes.playing.push(rowOf(card, tab, columnOf(board, playingId), "playing"));
+    if (card) lanes.playing.push(rowOf(card, tab, columnOf(board, playingId), "playing", watched));
   }
 
   for (const tab of tabByVideo.values()) {
     if (stored.has(tab.videoId) || tab.videoId === playingId) continue;
-    lanes.inbox.push(rowOf(cardFromTab(tab), tab, null, "inbox"));
+    lanes.inbox.push(rowOf(cardFromTab(tab), tab, null, "inbox", watched));
   }
   return lanes;
 }

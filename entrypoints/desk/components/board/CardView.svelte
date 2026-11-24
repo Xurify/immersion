@@ -28,6 +28,15 @@
     return row.lane === "done" || row.position <= 0 ? clock(row.duration) : `${clock(row.left)} left`;
   });
 
+  // "12 of 25 min", "35 of 39 sec" for clips under a minute, or "12 min" when the length is unknown.
+  const watchedText = $derived.by(() => {
+    if (row.duration > 0 && row.duration < 60) return `${Math.min(Math.round(row.watched), Math.round(row.duration))} of ${Math.round(row.duration)} sec`;
+    const watched = Math.max(1, Math.round(row.watched / 60));
+    if (row.duration <= 0) return `${watched} min`;
+    const total = Math.max(1, Math.round(row.duration / 60));
+    return `${Math.min(watched, total)} of ${total} min`;
+  });
+
   function setLang() {
     if (cardEl) actions.setLang(row, cardEl);
   }
@@ -69,7 +78,11 @@
         {#if row.lang}<LangName lang={row.lang} />{:else}<span>Unknown</span>{/if}
         {#if row.card.channel}<span class="channel">· {row.card.channel}</span>{/if}
       </div>
-      {#if row.tab && !playing}<span class="tag">Tab open</span>{/if}
+      {#if row.lane === "done" && row.watched >= 30}
+        <span class="watched">Watched {watchedText}</span>
+      {:else if row.tab && !playing}
+        <span class="tag">Tab open</span>
+      {/if}
     </div>
   </div>
 
@@ -257,6 +270,13 @@
   .now .meta,
   .now .meta :global(.native) {
     color: color-mix(in srgb, var(--on-ink) 70%, transparent);
+  }
+
+  .watched {
+    color: var(--ink-2);
+    font-size: 11.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
 
   .tag {

@@ -16,6 +16,8 @@ class Data {
   log = $state<ListenLog>({});
   sentences = $state<Sentence[]>([]);
   sessions = $state<Session[]>([]);
+  /** videoId → seconds actually played. */
+  watched = $state<Record<string, number>>({});
   /** Done cards from earlier days are hidden here; the background prunes them on its next write. */
   board = $state<Board>(emptyBoard());
   playing = $state<SessionShape["playing"]>(null);
@@ -37,14 +39,16 @@ class Data {
   }
 
   async refreshStored(): Promise<void> {
-    const [goals, log, sentences, sessions, board, playing] = await Promise.all([
+    const [goals, log, sentences, sessions, board, playing, watched] = await Promise.all([
       load("goals"),
       load("log"),
       load("sentences"),
       load("sessions"),
       load("board"),
       loadSession("playing"),
+      load("watched"),
     ]);
+    this.watched = watched;
     this.board = pruneDone(board);
     this.playing = playing;
     setGoalLanguages(Object.keys(goals));
@@ -59,7 +63,7 @@ class Data {
     this.#started = true;
     await Promise.all([this.refreshStored(), this.refreshTabs()]);
     this.loaded = true;
-    watch(["goals", "log", "sentences", "sessions", "meta", "overrides", "board"], () => {
+    watch(["goals", "log", "sentences", "sessions", "meta", "overrides", "board", "watched"], () => {
       void this.refreshStored();
       void this.refreshTabs();
     });

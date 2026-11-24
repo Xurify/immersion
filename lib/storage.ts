@@ -11,6 +11,8 @@ export interface StorageShape {
   meta: Record<string, VideoMeta>;
   overrides: Overrides;
   board: Board;
+  /** videoId → seconds actually played, counted the same way as the listening log. */
+  watched: Record<string, number>;
 }
 
 /** Lives in browser.storage.session: gone when the browser closes. */
@@ -30,6 +32,7 @@ export const DEFAULTS: StorageShape = {
   meta: {},
   overrides: { videos: {}, channels: {} },
   board: { cards: {}, columns: { inbox: [], next: [], done: [], later: [] } },
+  watched: {},
 };
 
 export async function load<K extends keyof StorageShape>(key: K): Promise<StorageShape[K]> {

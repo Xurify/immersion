@@ -3,7 +3,7 @@
   import { dateKey } from "../../../../lib/format";
   import { send } from "../../../../lib/messages";
 
-  const KNOWN_KEYS = ["goals", "log", "sentences", "sessions", "meta", "overrides"] as const;
+  const KNOWN_KEYS = ["goals", "log", "sentences", "sessions", "meta", "overrides", "watched"] as const;
   type Known = (typeof KNOWN_KEYS)[number];
 
   let message = $state("");
@@ -92,8 +92,9 @@
     busy = true;
     message = "";
     try {
-      await browser.storage.local.remove("log");
+      await browser.storage.local.remove(["log", "watched"]);
       data.log = {};
+      data.watched = {};
       message = "Listening history cleared. Goals and sentences are unchanged.";
     } catch {
       message = "Could not clear the history. Try again.";
