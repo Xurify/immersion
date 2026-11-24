@@ -1,7 +1,13 @@
 <script lang="ts">
   const SHORTCUTS: { keys: string[]; text: string; where?: string }[] = [
-    { keys: ["1", "2", "3", "4"], text: "Switch between Today, All videos, Review and History." },
-    { keys: ["P"], text: "Start today's session from the open tabs.", where: "Today" },
+    { keys: ["1", "2", "3", "4"], text: "Switch between Board, All videos, Review and History." },
+    { keys: ["P"], text: "Play Up next.", where: "Board" },
+    { keys: ["S"], text: "Stash all YouTube tabs into Inbox.", where: "Board" },
+    { keys: ["←", "→", "↑", "↓"], text: "Move between cards and columns.", where: "Board" },
+    { keys: ["Shift+↑", "Shift+↓"], text: "Reorder a card within its column.", where: "Board" },
+    { keys: ["Enter"], text: "Play the card.", where: "Board" },
+    { keys: ["N", "L", "D", "I"], text: "Send the card to Up next, Later, Done or Inbox.", where: "Board" },
+    { keys: ["Delete"], text: "Remove the card from the board.", where: "Board" },
     { keys: ["/"], text: "Search videos.", where: "All videos" },
     { keys: ["Esc"], text: "Clear the selection." },
     { keys: ["Space"], text: "Hear the sentence again.", where: "Review" },

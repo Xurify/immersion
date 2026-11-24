@@ -2,7 +2,7 @@
 
 A Chrome extension for learning languages by listening on YouTube.
 
-- **Today** shows how many minutes are left on today's goals and builds a session from your open tabs: the languages you're behind on come first.
+- **Board** keeps videos, not tabs, in five columns: Inbox, Up next, Listening now, Done today and Later. **Stash all tabs** saves every YouTube tab to Inbox with its place, then closes it. Playing Up next opens one tab at a time, resumes each video where you left it, and closes it when it ends. **Fill to goals** queues enough of the languages you're behind on. You can drag cards between columns or use the keyboard (arrow keys, plus `N`, `L`, `D`, `I`, `Enter`, `S`, `P`).
 - **All videos** sorts your open YouTube tabs into one column per language. You can start, save or close a selection.
 - **Review** brings back the sentences you saved from captions, on a 1, 3, 7, 16 and 35-day ladder.
 - **History** shows listening per day and per language, with goal days and streaks.
@@ -26,7 +26,7 @@ bun run build    # .output/chrome-mv3
 
 - `entrypoints/background.ts`: message router, listening log, session playback
 - `entrypoints/youtube.content/` and `youtube-main.content.ts`: page metadata, language detection, play ticks, saving sentences
-- `entrypoints/desk/`: the full-page app (Today, All videos, Review, History, Settings)
+- `entrypoints/desk/`: the full-page app (Board, All videos, Review, History, Settings)
 - `entrypoints/popup/`: toolbar popup
-- `lib/`: shared types, the message contract (`messages.ts`), storage, planning, review scheduling and stats
+- `lib/`: shared types, the board model (`board.ts`), the message contract (`messages.ts`), storage, planning, review scheduling and stats
 - `ui/` and `styles/base.css`: shared components and design tokens

@@ -9,7 +9,7 @@
     row,
     next,
     onplay,
-  }: { row: LangProgress; next: OpenVideo[]; onplay: (tabIds: number[]) => void } = $props();
+  }: { row: LangProgress; next: OpenVideo[]; onplay: (videos: OpenVideo[]) => void } = $props();
 
   const colour = $derived(langColor(row.lang));
   const first = $derived(next[0]);
@@ -24,7 +24,7 @@
     {:else if first}
       <small>next: {first.title}</small>
     {:else}
-      <small>No open video in this language</small>
+      <small>No videos in this language on the board</small>
     {/if}
   </div>
   <div class="figures">
@@ -33,7 +33,7 @@
     {:else}
       <span>{minutes(row.leftSeconds)}<span class="sr-only"> min left</span></span>
       {#if next.length > 0}
-        <button type="button" class="btn light small" onclick={() => onplay(next.map((video) => video.tabId))}>
+        <button type="button" class="btn light small" onclick={() => onplay(next)}>
           Play<span class="sr-only"> {nativeName(row.lang)}</span>
         </button>
       {/if}

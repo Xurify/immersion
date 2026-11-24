@@ -1,22 +1,24 @@
 <script lang="ts">
   import { data } from "../../lib/data.svelte";
   import AllVideos from "./views/AllVideos.svelte";
+  import Board from "./views/Board.svelte";
   import History from "./views/History.svelte";
   import Review from "./views/Review.svelte";
   import Settings from "./views/Settings.svelte";
-  import Today from "./views/Today.svelte";
 
   const VIEWS = [
-    { id: "today", label: "Today", key: "1" },
+    { id: "board", label: "Board", key: "1" },
     { id: "videos", label: "All videos", key: "2" },
     { id: "review", label: "Review", key: "3" },
     { id: "history", label: "History", key: "4" },
   ] as const;
   type ViewId = (typeof VIEWS)[number]["id"];
 
+  // The Today view became the Board; old links and desk:open("today") still land on it.
   const fromHash = (): ViewId => {
     const id = location.hash.slice(1);
-    return VIEWS.some((v) => v.id === id) ? (id as ViewId) : "today";
+    if (id === "today") return "board";
+    return VIEWS.some((v) => v.id === id) ? (id as ViewId) : "board";
   };
 
   let view = $state<ViewId>(fromHash());
@@ -74,8 +76,8 @@
   </header>
 
   <main>
-    {#if view === "today"}
-      <Today onnavigate={go} onsettings={() => (settingsOpen = true)} />
+    {#if view === "board"}
+      <Board onnavigate={go} onsettings={() => (settingsOpen = true)} />
     {:else if view === "videos"}
       <AllVideos />
     {:else if view === "review"}

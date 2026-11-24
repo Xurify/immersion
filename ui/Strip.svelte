@@ -13,7 +13,7 @@
 </script>
 
 <ol class="strip" class:bare={!labels} style:height="{height}px" aria-label="Session order">
-  {#each videos as video, i (video.tabId)}
+  {#each videos as video, i (video.videoId)}
     <li style:flex-grow={Math.max(video.remaining, 60)} style:--c={langColor(video.lang)}>
       {#if labels}
         <button type="button" onclick={() => onpick?.(video)} title={video.title}>

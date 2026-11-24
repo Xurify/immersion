@@ -116,13 +116,15 @@ export default defineContentScript({
     }
 
     function onTabCommand(message: unknown) {
-      const command = message as { type?: keyof TabCommands; payload?: TabCommands["clip:play"] } | undefined;
+      const command = message as { type?: string; payload?: TabCommands["clip:play"] } | undefined;
       if (!alive) return false;
       if (command?.type === "video:play") {
         clip = null;
         whenPlayerReady((player) => {
           player.play().catch(() => {});
         });
+      } else if (command?.type === "video:pause") {
+        video?.pause();
       } else if (command?.type === "clip:play" && command.payload) {
         playClip(command.payload.start, command.payload.end);
       }
