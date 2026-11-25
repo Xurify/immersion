@@ -30,6 +30,12 @@ class Data {
   /** Done cards from earlier days are hidden here; the background prunes them on its next write. */
   board = $state<Board>(emptyBoard());
   playing = $state<SessionShape["playing"]>(null);
+  /** What is playing now: the session's card, or else a video the user started in a tab themselves. */
+  nowPlaying = $derived.by<{ videoId: string; tabId: number; session: boolean } | null>(() => {
+    if (this.playing) return { ...this.playing, session: true };
+    const tab = this.tabs.find((video) => video.playing);
+    return tab ? { videoId: tab.videoId, tabId: tab.tabId, session: false } : null;
+  });
   loaded = $state(false);
 
   today = $derived(this.log[dateKey()] ?? {});

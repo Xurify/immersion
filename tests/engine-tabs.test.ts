@@ -70,6 +70,13 @@ test("live playback for another video in the same tab is ignored", () => {
   expect(video?.playing).toBe(false);
 });
 
+test("a tab that stopped reporting is not playing", () => {
+  const tabs: TabInfo[] = [{ id: 1, windowId: 1, index: 0, url: `${WATCH}bbbbbbbbbbb`, title: "x" }];
+  const live = { 1: { videoId: "bbbbbbbbbbb", position: 10, playing: true, at: 1_000_000 } };
+  expect(buildOpenVideos(tabs, state({ live }), 1_010_000)[0]?.playing).toBe(true);
+  expect(buildOpenVideos(tabs, state({ live }), 1_200_000)[0]?.playing).toBe(false);
+});
+
 test("remaining never goes negative", () => {
   const tabs: TabInfo[] = [{ id: 1, windowId: 1, index: 0, url: `${WATCH}bbbbbbbbbbb`, title: "x" }];
   const [video] = buildOpenVideos(tabs, state({ live: { 1: { videoId: "bbbbbbbbbbb", position: 999, playing: false, at: 1 } } }));

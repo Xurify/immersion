@@ -33,9 +33,9 @@
     const tabFor = (videoId: string) => data.tabs.find((video) => video.videoId === videoId);
     const cards = [...board.columns.next, ...board.columns.inbox]
       .map((id) => board.cards[id])
-      .filter((card) => card != null && card.videoId !== data.playing?.videoId)
+      .filter((card) => card != null && card.videoId !== data.nowPlaying?.videoId)
       .map((card) => asPlannable(card!, tabFor(card!.videoId)));
-    const untracked = data.tabs.filter((video) => !board.cards[video.videoId] && video.tabId !== data.playing?.tabId);
+    const untracked = data.tabs.filter((video) => !board.cards[video.videoId] && video.tabId !== data.nowPlaying?.tabId);
     return [...cards, ...untracked];
   });
   const plan = $derived(planSession(sources, data.progress, allMet ? 20 : defaultBudget(data.progress)));
@@ -57,11 +57,12 @@
   const upNextCount = $derived(data.board.columns.next.length);
   const upNextMinutes = $derived(minutes(columnSeconds(data.board, "next")));
   const nowTitle = $derived.by(() => {
-    if (!data.playing) return "";
-    return data.board.cards[data.playing.videoId]?.title ?? data.tabs.find((video) => video.tabId === data.playing?.tabId)?.title ?? "";
+    const now = data.nowPlaying;
+    if (!now) return "";
+    return data.board.cards[now.videoId]?.title ?? data.tabs.find((video) => video.tabId === now.tabId)?.title ?? "";
   });
   /** Stashing leaves the playing tab open, so it is not counted. */
-  const stashable = $derived(data.tabs.filter((video) => video.tabId !== data.playing?.tabId).length);
+  const stashable = $derived(data.tabs.filter((video) => video.tabId !== data.nowPlaying?.tabId).length);
 
   /** A language's open videos: the ones in the plan first, in plan order, then the rest. */
   function tabsFor(lang: string): OpenVideo[] {
@@ -111,6 +112,18 @@
       await send("board:pause", {});
     } catch {
       error = "Could not pause. Try again.";
+    }
+  }
+
+  async function showNow() {
+    const now = data.nowPlaying;
+    if (!now) return;
+    error = "";
+    try {
+      await send("tabs:focus", { tabId: now.tabId });
+      window.close();
+    } catch {
+      error = "Could not switch to that tab. Try again.";
     }
   }
 
@@ -238,13 +251,17 @@
         </section>
       {/if}
 
-      {#if data.playing}
+      {#if data.nowPlaying}
         <div class="now">
           <span class="pulse" aria-hidden="true"></span>
           <p class="now-text"><span class="now-label">Playing</span><span class="now-title">{nowTitle}</span></p>
           <div class="now-buttons">
-            <button type="button" class="btn ghost small" onclick={pause}>Pause</button>
-            <button type="button" class="btn ghost small" onclick={skip}>Skip</button>
+            {#if data.nowPlaying.session}
+              <button type="button" class="btn ghost small" onclick={pause}>Pause</button>
+              <button type="button" class="btn ghost small" onclick={skip}>Skip</button>
+            {:else}
+              <button type="button" class="btn ghost small" onclick={showNow}>Show tab</button>
+            {/if}
           </div>
         </div>
       {/if}

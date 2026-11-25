@@ -28,7 +28,14 @@ export function urlStart(url: string): number {
   return match ? Number(match[1]) : 0;
 }
 
-export function buildOpenVideos(tabs: TabInfo[], state: TabsState): OpenVideo[] {
+/**
+ * A tab ticks every 5 s, but Chrome can slow a hidden tab's timers to once a minute; a report
+ * older than this comes from a tab that stopped reporting, such as one the extension reloaded under.
+ */
+const LIVE_FRESH_MS = 75_000;
+
+/** Without `now`, every report counts as fresh. */
+export function buildOpenVideos(tabs: TabInfo[], state: TabsState, now?: number): OpenVideo[] {
   const videos: OpenVideo[] = [];
   const ordered = [...tabs].sort((a, b) => a.windowId - b.windowId || a.index - b.index);
   for (const tab of ordered) {
@@ -56,7 +63,7 @@ export function buildOpenVideos(tabs: TabInfo[], state: TabsState): OpenVideo[] 
       lang: resolveLang(videoId, channel, detectedLang, state.overrides),
       position,
       remaining: Math.max(0, duration - position),
-      playing: live?.playing ?? false,
+      playing: Boolean(live?.playing && (now === undefined || now - live.at < LIVE_FRESH_MS)),
       asleep: tab.discarded ?? false,
       isShort: new URL(url).pathname.startsWith("/shorts/"),
     });

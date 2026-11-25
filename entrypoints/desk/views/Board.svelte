@@ -51,7 +51,7 @@
   let now = $state(Date.now());
 
   const board = $derived(optimistic ?? data.board);
-  const lanes = $derived(buildLanes(board, data.tabs, data.playing?.videoId ?? null, data.watched));
+  const lanes = $derived(buildLanes(board, data.tabs, data.nowPlaying?.videoId ?? null, data.watched));
   const goals = $derived(data.progress.filter((row) => row.isGoal));
   const goalLangs = $derived(Object.keys(data.goals));
   const activeFilter = $derived(filter && goals.some((row) => row.lang === filter) ? filter : null);
@@ -62,7 +62,7 @@
     return out;
   });
   const playing = $derived(lanes.playing[0] ?? null);
-  const otherTabs = $derived(data.tabs.filter((tab) => tab.tabId !== data.playing?.tabId));
+  const otherTabs = $derived(data.tabs.filter((tab) => tab.tabId !== data.nowPlaying?.tabId));
   const fill = $derived(
     planSession(
       lanes.inbox.map((row) => asPlannable(row.card, row.tab ?? undefined)),
@@ -76,7 +76,7 @@
   const nextSeconds = $derived(columnSeconds(board, "next", activeFilter ?? undefined));
   const allNextSeconds = $derived(columnSeconds(board, "next"));
   const nextTitle = $derived(lanes.next[0]?.title ?? "");
-  const playingHint = $derived(data.playing ? "Hidden by the language filter." : HINT.playing);
+  const playingHint = $derived(data.nowPlaying ? "Hidden by the language filter." : HINT.playing);
 
   $effect(() => {
     const timer = setInterval(() => (now = Date.now()), 30_000);
@@ -101,7 +101,7 @@
   }
 
   function metaOf(lane: LaneKey): string {
-    if (lane === "playing") return playing ? `ends ${endsAt(timeOf(playing) + allNextSeconds, now)}` : "";
+    if (lane === "playing") return playing ? `ends ${endsAt(timeOf(playing) + (data.playing ? allNextSeconds : 0), now)}` : "";
     const rows = shownRows[lane];
     if (lane === "later") return rows.length ? `${rows.length} saved` : "";
     if (!rows.length) return "";

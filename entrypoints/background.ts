@@ -55,7 +55,7 @@ async function openVideos(): Promise<OpenVideo[]> {
     loadSession("live"),
     load("overrides"),
   ]);
-  return buildOpenVideos(tabs, { meta, live, overrides });
+  return buildOpenVideos(tabs, { meta, live, overrides }, Date.now());
 }
 
 /** Enrichment results: one serial write for the batch's metadata, then the board cards that still lack a language or length. */
@@ -379,7 +379,8 @@ const handlers: { [K in RequestKey]: Handler<K> } = {
   "board:stash": ({ videoIds }) =>
     serial(async () => {
       const [videos, playing, audible] = await Promise.all([openVideos(), loadSession("playing"), audibleFocusedTabIds()]);
-      const targets = stashTargets(videos, videoIds, [...(playing ? [playing.tabId] : []), ...audible]);
+      const keep = [...(playing ? [playing.tabId] : []), ...audible, ...videos.filter((video) => video.playing).map((video) => video.tabId)];
+      const targets = stashTargets(videos, videoIds, keep);
       if (targets.length === 0) return { stashed: 0 };
       const now = Date.now();
       let board = await load("board");
