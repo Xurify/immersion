@@ -15,14 +15,15 @@
 
   const colour = $derived(langColor(row.lang));
   const first = $derived(next[0]);
-  const listened = $derived(Math.min(row.goalMinutes, Math.floor(row.listenedSeconds / 60)));
+  const listened = $derived(Math.floor(row.listenedSeconds / 60));
+  const beaten = $derived(row.goalMinutes > 0 && listened > row.goalMinutes);
 </script>
 
 <li class="band" class:done={row.done} style:--panel={colour}>
   <div class="label">
     <span class="name"><LangName lang={row.lang} /></span>
     {#if row.done}
-      <small>{row.goalMinutes > 0 ? `${listened} of ${row.goalMinutes} min today` : "This week's goal is met"}</small>
+      <small>{row.goalMinutes > 0 ? `${listened} of ${row.goalMinutes} min today${beaten ? " · goal beaten" : ""}` : "This week's goal is met"}</small>
     {:else if first}
       <small><span class="sr-only">Next: </span>{first.title}</small>
     {:else if reading}
