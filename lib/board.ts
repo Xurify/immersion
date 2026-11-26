@@ -115,6 +115,24 @@ export function resumeUrl(card: Card): string {
 }
 
 /** A card shaped for lib/plan.ts, which plans over OpenVideo. */
+export type NowPlaying = { videoId: string; tabId: number; session: boolean };
+
+/**
+ * What is playing now. A tab you can hear beats one that only reports playing, and both beat
+ * a session whose own tab has gone quiet, so starting another video yourself takes over.
+ */
+export function nowPlayingOf(session: { videoId: string; tabId: number } | null, tabs: OpenVideo[], goalLangs: Lang[]): NowPlaying | null {
+  const inGoal = (tab: OpenVideo) => tab.lang !== null && goalLangs.includes(tab.lang);
+  const sessionTab = session ? tabs.find((tab) => tab.tabId === session.tabId) : undefined;
+  if (session && (sessionTab?.audible || sessionTab?.playing)) return { ...session, session: true };
+  const tab =
+    tabs.find((tab) => tab.audible && tab.playing && inGoal(tab)) ??
+    tabs.find((tab) => tab.audible && inGoal(tab)) ??
+    (session ? undefined : tabs.find((tab) => tab.playing && inGoal(tab)));
+  if (tab) return { videoId: tab.videoId, tabId: tab.tabId, session: false };
+  return session ? { ...session, session: true } : null;
+}
+
 /** Whether Stash takes a tab in this language: with goals set, only goal languages, so unrelated YouTube tabs stay open. */
 export function stashesLang(lang: Lang | null, goalLangs: Lang[]): boolean {
   return goalLangs.length === 0 || (lang !== null && goalLangs.includes(lang));

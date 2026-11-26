@@ -27,6 +27,8 @@ export interface OpenVideo extends VideoMeta {
   /** duration - position, never negative. */
   remaining: number;
   playing: boolean;
+  /** Chrome hears sound from the tab. Unlike `playing`, it cannot go stale or miss a tab whose script is not reporting. */
+  audible?: boolean;
   /** Tab was discarded by the browser, so position may be stale. */
   asleep: boolean;
   isShort: boolean;

@@ -47,6 +47,7 @@ test("joins meta, live playback and the video override", () => {
     position: 120,
     remaining: 480,
     playing: true,
+    audible: false,
     asleep: false,
     isShort: false,
   });

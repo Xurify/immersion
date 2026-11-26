@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { emptyBoard, move, pruneDone, remove, resumeUrl, upsert, type Card } from "../lib/board";
+import { emptyBoard, move, nowPlayingOf, pruneDone, remove, resumeUrl, upsert, type Card } from "../lib/board";
+import type { OpenVideo } from "../lib/types";
 
 const card = (videoId: string, extra: Partial<Card> = {}): Card => ({
   url: "", videoId, title: videoId, channel: "c", duration: 600, lang: "es", position: 0, addedAt: 0, ...extra,
@@ -39,4 +40,34 @@ test("done stamps a time and old done cards are pruned", () => {
 test("resume URL backs up a few seconds", () => {
   expect(resumeUrl(card("x", { position: 100 }))).toBe("https://www.youtube.com/watch?v=x&t=97s");
   expect(resumeUrl(card("x", { position: 5 }))).toBe("https://www.youtube.com/watch?v=x");
+});
+
+function tab(tabId: number, videoId: string, extra: Partial<OpenVideo> = {}): OpenVideo {
+  return {
+    videoId, title: videoId, channel: "c", duration: 600, detectedLang: "sk", lang: "sk",
+    tabId, windowId: 1, url: "", position: 0, remaining: 600, playing: false, asleep: false, isShort: false, ...extra,
+  };
+}
+
+test("now playing prefers the tab you can hear over an earlier tab still flagged playing", () => {
+  const tabs = [tab(1, "podcast", { lang: "et", playing: true }), tab(2, "vlog", { playing: true, audible: true })];
+  expect(nowPlayingOf(null, tabs, ["et", "sk"])).toEqual({ videoId: "vlog", tabId: 2, session: false });
+});
+
+test("now playing finds an audible goal tab even when its script is not reporting", () => {
+  const tabs = [tab(1, "a", { lang: "et", playing: true }), tab(2, "b", { audible: true })];
+  expect(nowPlayingOf(null, tabs, ["et", "sk"])?.videoId).toBe("b");
+});
+
+test("a quiet session gives way to a video you started yourself, and holds otherwise", () => {
+  const session = { videoId: "podcast", tabId: 1 };
+  const quiet = [tab(1, "podcast", { lang: "et" }), tab(2, "vlog", { playing: true, audible: true })];
+  expect(nowPlayingOf(session, quiet, ["et", "sk"])?.videoId).toBe("vlog");
+  expect(nowPlayingOf(session, [tab(1, "podcast", { lang: "et" })], ["et"])).toEqual({ ...session, session: true });
+  const heard = [tab(1, "podcast", { lang: "et", audible: true }), tab(2, "vlog", { playing: true, audible: true })];
+  expect(nowPlayingOf(session, heard, ["et", "sk"])?.session).toBe(true);
+});
+
+test("now playing ignores tabs outside the goal languages", () => {
+  expect(nowPlayingOf(null, [tab(1, "x", { lang: "uk", playing: true, audible: true })], ["sk"])).toBeNull();
 });
