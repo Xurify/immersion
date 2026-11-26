@@ -138,6 +138,12 @@ export function stashesLang(lang: Lang | null, goalLangs: Lang[]): boolean {
   return goalLangs.length === 0 || (lang !== null && goalLangs.includes(lang));
 }
 
+/** Tabs Stash leaves open: the session's tab and any tab playing or making sound. The banner must count with the same rule, or it reappears after a stash. */
+export function stashKeepTabIds(tabs: OpenVideo[], keep: (number | undefined)[]): number[] {
+  const ids = keep.filter((id): id is number => id !== undefined);
+  return [...ids, ...tabs.filter((tab) => tab.playing || tab.audible).map((tab) => tab.tabId)];
+}
+
 export function asPlannable(card: Card, tab?: OpenVideo): OpenVideo {
   return {
     tabId: tab?.tabId ?? -1,

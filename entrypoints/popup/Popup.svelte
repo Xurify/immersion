@@ -5,7 +5,7 @@
   import { columnSeconds } from "../../lib/board";
   import { data } from "../../lib/data.svelte";
   import { send } from "../../lib/messages";
-  import { asPlannable, stashesLang } from "../../lib/board";
+  import { asPlannable, stashesLang, stashKeepTabIds } from "../../lib/board";
   import { defaultBudget, planSession } from "../../lib/plan";
   import type { OpenVideo } from "../../lib/types";
   import LangBand from "./components/LangBand.svelte";
@@ -61,10 +61,11 @@
     if (!now) return "";
     return data.board.cards[now.videoId]?.title ?? data.tabs.find((video) => video.tabId === now.tabId)?.title ?? "";
   });
-  /** Stashing leaves the playing tab and tabs outside the goal languages open, so they are not counted. */
-  const stashable = $derived(
-    data.tabs.filter((video) => video.tabId !== data.nowPlaying?.tabId && stashesLang(video.lang, Object.keys(data.goals))).length,
-  );
+  /** Stashing leaves playing tabs and tabs outside the goal languages open, so they are not counted. */
+  const stashable = $derived.by(() => {
+    const keep = stashKeepTabIds(data.tabs, [data.playing?.tabId, data.nowPlaying?.tabId]);
+    return data.tabs.filter((video) => !keep.includes(video.tabId) && stashesLang(video.lang, Object.keys(data.goals))).length;
+  });
 
   /** A language's open videos: the ones in the plan first, in plan order, then the rest. */
   function tabsFor(lang: string): OpenVideo[] {
