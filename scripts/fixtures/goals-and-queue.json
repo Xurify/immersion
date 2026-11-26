@@ -1,0 +1,33 @@
+{
+  "goals": { "ru": 60, "cs": 45 },
+  "board": {
+    "cards": {
+      "aaaaaaaaaaa": {
+        "url": "https://www.youtube.com/watch?v=aaaaaaaaaaa",
+        "videoId": "aaaaaaaaaaa",
+        "title": "Example Russian video: a paused episode",
+        "channel": "Example channel",
+        "duration": 1200,
+        "lang": "ru",
+        "position": 300,
+        "addedAt": 1700000000000
+      },
+      "bbbbbbbbbbb": {
+        "url": "https://www.youtube.com/watch?v=bbbbbbbbbbb",
+        "videoId": "bbbbbbbbbbb",
+        "title": "Example Czech vlog",
+        "channel": "Example channel",
+        "duration": 900,
+        "lang": "cs",
+        "position": 0,
+        "addedAt": 1700000000001
+      }
+    },
+    "columns": {
+      "inbox": [],
+      "next": ["aaaaaaaaaaa", "bbbbbbbbbbb"],
+      "done": [],
+      "later": []
+    }
+  }
+}
