@@ -1,22 +1,32 @@
 ## What changed
 
-<!-- The problem a user had, in their words, then what is different now and why. Lead with the problem, not the code. Name only what the diff contains. -->
+<!-- What you see or what the extension does differently now, and why. Start from the problem in your own words, not the code. Name only what the diff contains. -->
+
+## Where it shows
+
+<!-- Which surface: popup, desk (which view), YouTube watch page, the toast or banner, or background only. -->
 
 ## Screenshots
 
-<!-- Only for a visible change in the popup or the desk. Light and dark when colours change; before and after for a restyle. Attach with `gh pr edit <n> --attach <path>`. Delete the section when nothing visible changed. -->
+<!-- Only for a visible change. Popup and desk: light and dark when colours change. Desk: 1280 px and 390 px when the layout changes. Before and after for a restyle. Attach with `gh pr edit <n> --attach <path>`. Delete the section when nothing visible changed. -->
+
+## Stored data
+
+<!-- Any change to what is saved in extension storage (board, goals, sessions, settings): the shape before and after, and what happens to data already saved. Delete the section when no stored shape changes. -->
 
 ## Try it
 
-<!-- Steps to see the change in the extension, including the state it needs. Example: "Pause a Russian video, open the popup, press Русский ▶." -->
+<!-- Build with `npm run build`, load the unpacked build from `.output/chrome-mv3` (chrome://extensions, Developer mode), then the steps and the state they need. Example: "Pause a Russian video, open the popup, press Русский ▶. It should resume that video." -->
 
-## Verification
+## Checks
 
-<!-- Real output: the `bun test` pass count, the `npm run check` error count, and what you checked by hand in the browser. -->
+- `bun test`:
+- `npm run check`:
+- `npm run build`:
 
-- Tests:
-- Types:
-- Checked by hand:
+## Checked by hand
+
+<!-- Which surface and browser state you used: goal languages, how many open tabs, a video playing or paused, light or dark. -->
 
 ## Not checked
 
