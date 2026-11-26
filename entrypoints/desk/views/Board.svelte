@@ -63,7 +63,7 @@
   });
   const playing = $derived(lanes.playing[0] ?? null);
   const otherTabs = $derived.by(() => {
-    const keep = stashKeepTabIds(data.tabs, [data.playing?.tabId, data.nowPlaying?.tabId]);
+    const keep = stashKeepTabIds(data.playing, data.tabs, goalLangs);
     return data.tabs.filter((tab) => !keep.includes(tab.tabId) && stashesLang(tab.lang, goalLangs));
   });
   const fill = $derived(

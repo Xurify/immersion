@@ -374,7 +374,7 @@ const handlers: { [K in RequestKey]: Handler<K> } = {
   "board:stash": ({ videoIds }) =>
     serial(async () => {
       const [videos, playing, goals] = await Promise.all([openVideos(), loadSession("playing"), load("goals")]);
-      const keep = stashKeepTabIds(videos, [playing?.tabId]);
+      const keep = stashKeepTabIds(playing, videos, Object.keys(goals));
       const targets = stashTargets(videos, videoIds, keep, Object.keys(goals));
       if (targets.length === 0) return { stashed: 0 };
       const now = Date.now();

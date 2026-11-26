@@ -63,8 +63,9 @@
   });
   /** Stashing leaves playing tabs and tabs outside the goal languages open, so they are not counted. */
   const stashable = $derived.by(() => {
-    const keep = stashKeepTabIds(data.tabs, [data.playing?.tabId, data.nowPlaying?.tabId]);
-    return data.tabs.filter((video) => !keep.includes(video.tabId) && stashesLang(video.lang, Object.keys(data.goals))).length;
+    const goalLangs = Object.keys(data.goals);
+    const keep = stashKeepTabIds(data.playing, data.tabs, goalLangs);
+    return data.tabs.filter((video) => !keep.includes(video.tabId) && stashesLang(video.lang, goalLangs)).length;
   });
 
   /** A language's open videos: the ones in the plan first, in plan order, then the rest. */

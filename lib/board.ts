@@ -138,10 +138,18 @@ export function stashesLang(lang: Lang | null, goalLangs: Lang[]): boolean {
   return goalLangs.length === 0 || (lang !== null && goalLangs.includes(lang));
 }
 
-/** Tabs Stash leaves open: the session's tab and any tab playing or making sound. The banner must count with the same rule, or it reappears after a stash. */
-export function stashKeepTabIds(tabs: OpenVideo[], keep: (number | undefined)[]): number[] {
-  const ids = keep.filter((id): id is number => id !== undefined);
-  return [...ids, ...tabs.filter((tab) => tab.playing || tab.audible).map((tab) => tab.tabId)];
+/**
+ * Tabs Stash leaves open: the session's tab, what is playing now, and any tab you can hear.
+ * A tab that only reports playing is not kept: muted tabs and background tabs holding autoplay
+ * report playing with nothing heard. The banner counts with the same rule, or it reappears after a stash.
+ */
+export function stashKeepTabIds(session: { videoId: string; tabId: number } | null, tabs: OpenVideo[], goalLangs: Lang[]): number[] {
+  const now = nowPlayingOf(session, tabs, goalLangs);
+  return [
+    ...(session ? [session.tabId] : []),
+    ...(now ? [now.tabId] : []),
+    ...tabs.filter((tab) => tab.audible).map((tab) => tab.tabId),
+  ];
 }
 
 export function asPlannable(card: Card, tab?: OpenVideo): OpenVideo {

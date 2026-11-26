@@ -23,9 +23,15 @@ test("stash takes every tab except the playing one and the audible focused one",
   expect(stashTargets(videos, undefined, [2, 4]).map((video) => video.videoId)).toEqual(["a", "c"]);
 });
 
-test("stash keeps the session tab and every playing or audible tab", () => {
+test("stash keeps the session tab and tabs you can hear, but takes silent tabs that report playing", () => {
   const videos = [openTab(1, "a"), { ...openTab(2, "b"), playing: true }, { ...openTab(3, "c"), audible: true }, openTab(4, "d")];
-  const keep = stashKeepTabIds(videos, [4, undefined]);
+  const keep = stashKeepTabIds({ videoId: "d", tabId: 4 }, videos, ["es"]);
+  expect(stashTargets(videos, undefined, keep).map((video) => video.videoId)).toEqual(["a", "b"]);
+});
+
+test("with no session, stash keeps the tab playing in a goal language", () => {
+  const videos = [openTab(1, "a"), { ...openTab(2, "b"), playing: true }];
+  const keep = stashKeepTabIds(null, videos, ["es"]);
   expect(stashTargets(videos, undefined, keep).map((video) => video.videoId)).toEqual(["a"]);
 });
 
