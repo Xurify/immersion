@@ -61,6 +61,11 @@
     if (!now) return "";
     return data.board.cards[now.videoId]?.title ?? data.tabs.find((video) => video.tabId === now.tabId)?.title ?? "";
   });
+  const nowLang = $derived.by(() => {
+    const now = data.nowPlaying;
+    if (!now) return null;
+    return data.tabs.find((video) => video.tabId === now.tabId)?.lang ?? data.board.cards[now.videoId]?.lang ?? null;
+  });
   /** Stashing leaves playing tabs and tabs outside the goal languages open, so they are not counted. */
   const stashable = $derived.by(() => {
     const goalLangs = Object.keys(data.goals);
@@ -68,12 +73,17 @@
     return data.tabs.filter((video) => !keep.includes(video.tabId) && stashesLang(video.lang, goalLangs)).length;
   });
 
-  /** A language's open videos: the ones in the plan first, in plan order, then the rest. */
+  /**
+   * A language's open videos. The top of Up next comes first: a paused video goes back there, so this continues it.
+   * Then the ones in the plan in plan order, then the rest.
+   */
   function tabsFor(lang: string): OpenVideo[] {
-    const inPlan = plan.videos.filter((video) => video.lang === lang);
+    const resume = sources.find((video) => video.lang === lang && playable(video) && data.board.columns.next.includes(video.videoId));
+    const others = (video: OpenVideo) => video.videoId !== resume?.videoId;
+    const inPlan = plan.videos.filter((video) => video.lang === lang && others(video));
     const planned = new Set(inPlan.map((video) => video.videoId));
-    const rest = sources.filter((video) => video.lang === lang && playable(video) && !planned.has(video.videoId));
-    return [...inPlan, ...rest];
+    const rest = sources.filter((video) => video.lang === lang && playable(video) && !planned.has(video.videoId) && others(video));
+    return [...(resume ? [resume] : []), ...inPlan, ...rest];
   }
 
   async function openDesk(view?: string) {
@@ -273,7 +283,7 @@
       {#if hasGoals}
         <ul class="bands">
           {#each goalRows as row (row.lang)}
-            <LangBand {row} next={tabsFor(row.lang)} {reading} onplay={start} />
+            <LangBand {row} next={tabsFor(row.lang)} {reading} playing={nowLang === row.lang} onplay={start} onshow={showNow} />
           {/each}
         </ul>
       {:else}

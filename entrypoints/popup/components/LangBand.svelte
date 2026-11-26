@@ -10,8 +10,17 @@
     row,
     next,
     reading = false,
+    playing = false,
     onplay,
-  }: { row: LangProgress; next: OpenVideo[]; reading?: boolean; onplay: (videos: OpenVideo[]) => void } = $props();
+    onshow,
+  }: {
+    row: LangProgress;
+    next: OpenVideo[];
+    reading?: boolean;
+    playing?: boolean;
+    onplay: (videos: OpenVideo[]) => void;
+    onshow: () => void;
+  } = $props();
 
   const colour = $derived(langColor(row.lang));
   const first = $derived(next[0]);
@@ -40,7 +49,9 @@
       </span>
     {:else}
       <span class="left">{minutes(row.leftSeconds)}<span class="unit">min</span></span>
-      {#if next.length > 0}
+      {#if playing}
+        <button type="button" class="show" onclick={onshow} aria-label="Show the {nativeName(row.lang)} tab">Show tab</button>
+      {:else if next.length > 0}
         <button type="button" class="play" onclick={() => onplay(next)} aria-label="Play {nativeName(row.lang)}">
           <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M3 1.5v9l7.5-4.5z" /></svg>
         </button>
@@ -140,6 +151,17 @@
 
   .play:active {
     transform: scale(0.96);
+  }
+
+  .show {
+    padding: 8px 14px;
+    border: 0;
+    border-radius: var(--pill);
+    background: #fff;
+    color: var(--panel);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
   }
 
   .done-mark {
