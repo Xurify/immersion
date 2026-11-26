@@ -14,7 +14,7 @@
 //   --build     run `npm run build` first
 //
 // Needs Playwright and a Chromium build with the full browser (not the headless shell, which cannot load extensions).
-// Finds `playwright` in the project's node_modules, or in the folder named by PW_MODULE. Finds Chromium in the
+// Finds `playwright` in PW_MODULE, the project's node_modules, or ~/.claude/scripts/node_modules. Finds Chromium in the
 // Playwright cache, or at the executable named by PW_CHROMIUM.
 import { execSync } from "node:child_process";
 import fs from "node:fs";
@@ -42,7 +42,12 @@ function list(value, fallback) {
 }
 
 function loadPlaywright() {
-  const candidates = [process.env.PW_MODULE, path.join(root, "node_modules", "playwright"), "playwright"].filter(Boolean);
+  const candidates = [
+    process.env.PW_MODULE,
+    path.join(root, "node_modules", "playwright"),
+    path.join(os.homedir(), ".claude", "scripts", "node_modules", "playwright"),
+    "playwright",
+  ].filter(Boolean);
   for (const candidate of candidates) {
     try {
       return require(candidate);
