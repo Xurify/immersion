@@ -15,6 +15,11 @@ test("resuming after a pause counts nothing for the paused interval", () => {
   expect(listenedSeconds(beat(3_000, false), beat(3_100))).toBe(0);
 });
 
+test("an interval that began while muted counts nothing", () => {
+  expect(listenedSeconds({ ...beat(0), muted: true }, beat(5_000))).toBe(0);
+  expect(listenedSeconds({ ...beat(0), muted: false }, beat(5_000))).toBe(5);
+});
+
 test("no earlier report, or another video, counts nothing", () => {
   expect(listenedSeconds(undefined, beat(5_000))).toBe(0);
   expect(listenedSeconds(beat(0), beat(5_000, true, "bbbbbbbbbbb"))).toBe(0);

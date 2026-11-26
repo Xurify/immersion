@@ -28,7 +28,7 @@ export interface StorageShape {
 export interface SessionShape {
   active: ActiveSession | null;
   /** tabId → last reported playback state. */
-  live: Record<string, { videoId: string; position: number; playing: boolean; at: number }>;
+  live: Record<string, { videoId: string; position: number; playing: boolean; muted?: boolean; at: number }>;
   /** The board card being played one tab at a time, and its tab. */
   playing: { videoId: string; tabId: number } | null;
 }

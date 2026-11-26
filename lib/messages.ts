@@ -54,7 +54,7 @@ export interface Requests {
   "yt:meta": { req: VideoMeta; res: void };
   /** From the content script every few seconds while on a watch page. */
   /** `watching` is false while the tab is hidden and not in picture-in-picture: background listening. */
-  "yt:tick": { req: { videoId: string; position: number; playing: boolean; watching?: boolean }; res: void };
+  "yt:tick": { req: { videoId: string; position: number; playing: boolean; muted?: boolean; watching?: boolean }; res: void };
   "yt:ended": { req: { videoId: string }; res: void };
   /** From the content script when the viewer saves the current caption. */
   "yt:save-sentence": { req: Omit<Sentence, "id" | "createdAt" | "step" | "dueAt" | "reviews" | "lang"> & { lang: string | null }; res: { saved: boolean } };

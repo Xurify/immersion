@@ -2,6 +2,7 @@
 export interface Beat {
   videoId: string;
   playing: boolean;
+  muted?: boolean;
   at: number;
 }
 
@@ -12,11 +13,11 @@ const MAX_CREDIT_MS = 10_000;
 
 /**
  * Seconds of listening between two reports from one tab. The interval counts only when the
- * earlier report was playing: play and pause are reported at once, so that report marks
- * where the interval started.
+ * earlier report was playing and unmuted: play and pause are reported at once, so that report
+ * marks where the interval started.
  */
 export function listenedSeconds(previous: Beat | undefined, current: Beat): number {
-  if (!previous || previous.videoId !== current.videoId || !previous.playing) return 0;
+  if (!previous || previous.videoId !== current.videoId || !previous.playing || previous.muted) return 0;
   const gap = current.at - previous.at;
   if (gap > MAX_GAP_MS) return 0;
   return Math.min(gap, MAX_CREDIT_MS) / 1000;
