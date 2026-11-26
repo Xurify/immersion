@@ -2,7 +2,7 @@ import { dateKey } from "./format";
 import { send } from "./messages";
 import { progressToday, type LangProgress } from "./plan";
 import { setGoalLanguages } from "./colors.svelte";
-import { emptyBoard, pruneDone, type Board } from "./board";
+import { emptyBoard, nowPlayingOf, pruneDone, type Board, type NowPlaying } from "./board";
 import { load, loadSession, watch, type SessionShape } from "./storage";
 import { goalsForToday, withManual } from "./stats";
 import type { Follow, GoalPeriod, Goals, ListenLog, ManualEntry, OpenVideo, Sentence, Session } from "./types";
@@ -30,12 +30,8 @@ class Data {
   /** Done cards from earlier days are hidden here; the background prunes them on its next write. */
   board = $state<Board>(emptyBoard());
   playing = $state<SessionShape["playing"]>(null);
-  /** What is playing now: the session's card, or else a video in a goal language the user started in a tab themselves. */
-  nowPlaying = $derived.by<{ videoId: string; tabId: number; session: boolean } | null>(() => {
-    if (this.playing) return { ...this.playing, session: true };
-    const tab = this.tabs.find((video) => video.playing && video.lang !== null && video.lang in this.goals);
-    return tab ? { videoId: tab.videoId, tabId: tab.tabId, session: false } : null;
-  });
+  /** What is playing now: the session's card, or a video in a goal language the user started in a tab themselves. */
+  nowPlaying = $derived<NowPlaying | null>(nowPlayingOf(this.playing, this.tabs, Object.keys(this.goals)));
   loaded = $state(false);
 
   today = $derived(this.log[dateKey()] ?? {});

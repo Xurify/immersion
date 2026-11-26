@@ -10,6 +10,7 @@ export interface TabInfo {
   url?: string;
   title?: string;
   discarded?: boolean;
+  audible?: boolean;
 }
 
 export interface TabsState {
@@ -64,6 +65,7 @@ export function buildOpenVideos(tabs: TabInfo[], state: TabsState, now?: number)
       position,
       remaining: Math.max(0, duration - position),
       playing: Boolean(live?.playing && (now === undefined || now - live.at < LIVE_FRESH_MS)),
+      audible: tab.audible ?? false,
       asleep: tab.discarded ?? false,
       isShort: new URL(url).pathname.startsWith("/shorts/"),
     });
