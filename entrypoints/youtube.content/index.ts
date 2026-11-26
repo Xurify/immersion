@@ -71,7 +71,7 @@ export default defineContentScript({
       const videoId = currentVideoId();
       if (!alive || !videoId || !video) return;
       const watching = document.visibilityState === "visible" || Boolean(document.pictureInPictureElement);
-      report("yt:tick", { videoId, position: video.currentTime, playing: !video.paused && !video.ended, watching });
+      report("yt:tick", { videoId, position: video.currentTime, playing: !video.paused && !video.ended, muted: video.muted, watching });
     }
 
     /** Reported once per video, whether it ended or looped. */

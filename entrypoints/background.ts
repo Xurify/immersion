@@ -492,14 +492,14 @@ const handlers: { [K in RequestKey]: Handler<K> } = {
       if (updated !== board) await writeBoard(updated);
     }),
 
-  "yt:tick": ({ videoId, position, playing, watching }, sender) =>
+  "yt:tick": ({ videoId, position, playing, muted, watching }, sender) =>
     serial(async () => {
       const tabId = sender.tab?.id;
       if (tabId === undefined) return;
       const at = Date.now();
       const live = await loadSession("live");
       const previous = live[tabId];
-      live[tabId] = { videoId, position, playing, at };
+      live[tabId] = { videoId, position, playing, muted, at };
       await saveSession("live", live);
 
       const board = await load("board");
@@ -509,7 +509,7 @@ const handlers: { [K in RequestKey]: Handler<K> } = {
         if (updated !== board) await writeBoard(updated);
       }
 
-      const seconds = listenedSeconds(previous, { videoId, playing, at });
+      const seconds = listenedSeconds(previous, { videoId, playing, muted, at });
       if (seconds <= 0) return;
       const watched = await load("watched");
       watched[videoId] = (watched[videoId] ?? 0) + seconds;
