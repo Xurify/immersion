@@ -1,7 +1,7 @@
 <script lang="ts">
   import { tick } from "svelte";
   import { data } from "../../../lib/data.svelte";
-  import { asPlannable, columnSeconds, move, remove as removeCard, stashesLang, upsert, type Board as BoardState, type Column } from "../../../lib/board";
+  import { asPlannable, columnSeconds, move, remove as removeCard, stashesLang, stashKeepTabIds, upsert, type Board as BoardState, type Column } from "../../../lib/board";
   import { duration, endsAt, minutes } from "../../../lib/format";
   import { englishName } from "../../../lib/languages";
   import { langColor } from "../../../lib/colors.svelte";
@@ -62,7 +62,10 @@
     return out;
   });
   const playing = $derived(lanes.playing[0] ?? null);
-  const otherTabs = $derived(data.tabs.filter((tab) => tab.tabId !== data.nowPlaying?.tabId && stashesLang(tab.lang, goalLangs)));
+  const otherTabs = $derived.by(() => {
+    const keep = stashKeepTabIds(data.playing, data.tabs, goalLangs);
+    return data.tabs.filter((tab) => !keep.includes(tab.tabId) && stashesLang(tab.lang, goalLangs));
+  });
   const fill = $derived(
     planSession(
       lanes.inbox.map((row) => asPlannable(row.card, row.tab ?? undefined)),

@@ -3,7 +3,7 @@ import { grade } from "../lib/review";
 import { dateKey, uid, videoIdOf } from "../lib/format";
 import { load, loadSession, save, saveSession } from "../lib/storage";
 import type { Requests, RequestKey } from "../lib/messages";
-import { cardFromTab, move, pruneDone, remove, resumeUrl, setPosition, upsert, type Board, type Card } from "../lib/board";
+import { cardFromTab, move, pruneDone, remove, resumeUrl, setPosition, stashKeepTabIds, upsert, type Board, type Card } from "../lib/board";
 import { listenedSeconds } from "../lib/engine/listening";
 import { createEnrich, needsMeta } from "../lib/engine/enrich";
 import { injectIntoYouTubeTabs } from "../lib/engine/inject";
@@ -183,11 +183,6 @@ async function checkFeeds(only?: string): Promise<number> {
   }
   if (queued.length) void enrich.enqueue(queued.map((videoId) => ({ videoId })));
   return added;
-}
-
-async function audibleFocusedTabIds(): Promise<number[]> {
-  const tabs = await browser.tabs.query({ active: true, lastFocusedWindow: true, audible: true });
-  return tabs.flatMap((tab) => (tab.id === undefined ? [] : [tab.id]));
 }
 
 /** Unread YouTube items from Chrome's reading list, newest first. */
@@ -378,8 +373,8 @@ const handlers: { [K in RequestKey]: Handler<K> } = {
 
   "board:stash": ({ videoIds }) =>
     serial(async () => {
-      const [videos, playing, audible, goals] = await Promise.all([openVideos(), loadSession("playing"), audibleFocusedTabIds(), load("goals")]);
-      const keep = [...(playing ? [playing.tabId] : []), ...audible, ...videos.filter((video) => video.playing).map((video) => video.tabId)];
+      const [videos, playing, goals] = await Promise.all([openVideos(), loadSession("playing"), load("goals")]);
+      const keep = stashKeepTabIds(playing, videos, Object.keys(goals));
       const targets = stashTargets(videos, videoIds, keep, Object.keys(goals));
       if (targets.length === 0) return { stashed: 0 };
       const now = Date.now();

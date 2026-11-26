@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { columnOf, emptyBoard, upsert, type Board, type Card } from "../lib/board";
+import { columnOf, emptyBoard, stashKeepTabIds, upsert, type Board, type Card } from "../lib/board";
 import { finishCard, refreshCard, startCard, stashTargets } from "../lib/engine/cards";
 import type { OpenVideo } from "../lib/types";
 
@@ -21,6 +21,18 @@ function queue(ids: string[]): Board {
 test("stash takes every tab except the playing one and the audible focused one", () => {
   const videos = [openTab(1, "a"), openTab(2, "b"), openTab(3, "c"), openTab(4, "d")];
   expect(stashTargets(videos, undefined, [2, 4]).map((video) => video.videoId)).toEqual(["a", "c"]);
+});
+
+test("stash keeps the session tab and tabs you can hear, but takes silent tabs that report playing", () => {
+  const videos = [openTab(1, "a"), { ...openTab(2, "b"), playing: true }, { ...openTab(3, "c"), audible: true }, openTab(4, "d")];
+  const keep = stashKeepTabIds({ videoId: "d", tabId: 4 }, videos, ["es"]);
+  expect(stashTargets(videos, undefined, keep).map((video) => video.videoId)).toEqual(["a", "b"]);
+});
+
+test("with no session, stash keeps the tab playing in a goal language", () => {
+  const videos = [openTab(1, "a"), { ...openTab(2, "b"), playing: true }];
+  const keep = stashKeepTabIds(null, videos, ["es"]);
+  expect(stashTargets(videos, undefined, keep).map((video) => video.videoId)).toEqual(["a"]);
 });
 
 test("stash with ids takes only those videos and still spares kept tabs", () => {
