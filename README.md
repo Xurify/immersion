@@ -1,4 +1,4 @@
-# Language Immersion Tracker
+# Immersion
 
 A Chrome extension for learning languages by listening on YouTube.
 

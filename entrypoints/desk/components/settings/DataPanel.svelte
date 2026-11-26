@@ -84,7 +84,7 @@
       const url = URL.createObjectURL(new Blob([JSON.stringify(everything, null, 2)], { type: "application/json" }));
       const link = document.createElement("a");
       link.href = url;
-      link.download = `language-immersion-tracker-${dateKey()}.json`;
+      link.download = `immersion-${dateKey()}.json`;
       document.body.append(link);
       link.click();
       link.remove();

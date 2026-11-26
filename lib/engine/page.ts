@@ -1,7 +1,7 @@
 /** Tags messages between the page-world and the isolated content script. */
-export const BRIDGE = "language-immersion-tracker";
+export const BRIDGE = "immersion";
 /** Window property a running content script sets, so a newer copy can stop it. */
-export const LIVE_FLAG = "__languageImmersionTracker";
+export const LIVE_FLAG = "__immersion";
 
 /** Caption segments as one line, whitespace collapsed. */
 export function captionLine(segments: (string | null)[]): string {
