@@ -1,6 +1,6 @@
-import { columnOf, move, upsert, type Board, type Card, type Column } from "../board";
+import { columnOf, move, stashesLang, upsert, type Board, type Card, type Column } from "../board";
 import type { SessionShape } from "../storage";
-import type { OpenVideo, Overrides, VideoMeta } from "../types";
+import type { Lang, OpenVideo, Overrides, VideoMeta } from "../types";
 import { resolveLang } from "./tabs";
 
 export type Playing = NonNullable<SessionShape["playing"]>;
@@ -65,7 +65,9 @@ export function fillCard(board: Board, videoId: string, meta: VideoMeta | undefi
   return { ...board, cards: { ...board.cards, [videoId]: { ...card, lang, duration, title, channel } } };
 }
 
-/** The open videos a stash closes: the given ones (or all), minus the tabs that must stay open. */
-export function stashTargets(videos: OpenVideo[], videoIds: string[] | undefined, keepTabIds: number[]): OpenVideo[] {
-  return videos.filter((video) => (!videoIds || videoIds.includes(video.videoId)) && !keepTabIds.includes(video.tabId));
+/** The open videos a stash closes: the given ones, or else every tab in a goal language, minus the tabs that must stay open. */
+export function stashTargets(videos: OpenVideo[], videoIds: string[] | undefined, keepTabIds: number[], goalLangs: Lang[] = []): OpenVideo[] {
+  return videos.filter(
+    (video) => (videoIds ? videoIds.includes(video.videoId) : stashesLang(video.lang, goalLangs)) && !keepTabIds.includes(video.tabId),
+  );
 }

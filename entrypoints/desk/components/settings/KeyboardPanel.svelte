@@ -2,7 +2,7 @@
   const SHORTCUTS: { keys: string[]; text: string; where?: string }[] = [
     { keys: ["1", "2", "3", "4"], text: "Switch between Board, All videos, Review and History." },
     { keys: ["P"], text: "Play Up next.", where: "Board" },
-    { keys: ["S"], text: "Stash all YouTube tabs into Inbox.", where: "Board" },
+    { keys: ["S"], text: "Stash tabs in your goal languages into Inbox.", where: "Board" },
     { keys: ["←", "→", "↑", "↓"], text: "Move between cards and columns.", where: "Board" },
     { keys: ["Shift+↑", "Shift+↓"], text: "Reorder a card within its column.", where: "Board" },
     { keys: ["Enter"], text: "Play the card.", where: "Board" },
