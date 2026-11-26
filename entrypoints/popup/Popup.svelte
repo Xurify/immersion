@@ -5,7 +5,7 @@
   import { columnSeconds } from "../../lib/board";
   import { data } from "../../lib/data.svelte";
   import { send } from "../../lib/messages";
-  import { asPlannable } from "../../lib/board";
+  import { asPlannable, stashesLang } from "../../lib/board";
   import { defaultBudget, planSession } from "../../lib/plan";
   import type { OpenVideo } from "../../lib/types";
   import LangBand from "./components/LangBand.svelte";
@@ -61,8 +61,10 @@
     if (!now) return "";
     return data.board.cards[now.videoId]?.title ?? data.tabs.find((video) => video.tabId === now.tabId)?.title ?? "";
   });
-  /** Stashing leaves the playing tab open, so it is not counted. */
-  const stashable = $derived(data.tabs.filter((video) => video.tabId !== data.nowPlaying?.tabId).length);
+  /** Stashing leaves the playing tab and tabs outside the goal languages open, so they are not counted. */
+  const stashable = $derived(
+    data.tabs.filter((video) => video.tabId !== data.nowPlaying?.tabId && stashesLang(video.lang, Object.keys(data.goals))).length,
+  );
 
   /** A language's open videos: the ones in the plan first, in plan order, then the rest. */
   function tabsFor(lang: string): OpenVideo[] {
@@ -301,7 +303,7 @@
         {:else if hasGoals && !allMet}
           <p class="note">Open YouTube videos in the languages you're learning to plan a session.</p>
         {/if}
-        {#if data.tabs.length >= STASH_FROM}
+        {#if stashable >= STASH_FROM}
           <button type="button" class="btn ghost stash" onclick={stashTabs}>
             Stash {stashable} {stashable === 1 ? "tab" : "tabs"} to Inbox
           </button>

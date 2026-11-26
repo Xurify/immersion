@@ -60,3 +60,10 @@ test("a playing card refreshed from a tab stays out of the columns", () => {
   expect(columnOf(board, "p")).toBeNull();
   expect(board.columns.inbox).toEqual([]);
 });
+
+test("stash with goals takes only tabs in a goal language, but picked ids ignore language", () => {
+  const videos = [openTab(1, "a"), { ...openTab(2, "b"), lang: "fr" }, { ...openTab(3, "c"), lang: null }];
+  expect(stashTargets(videos, undefined, [], ["es"]).map((video) => video.videoId)).toEqual(["a"]);
+  expect(stashTargets(videos, undefined, [], []).map((video) => video.videoId)).toEqual(["a", "b", "c"]);
+  expect(stashTargets(videos, ["b"], [], ["es"]).map((video) => video.videoId)).toEqual(["b"]);
+});

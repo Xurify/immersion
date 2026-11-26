@@ -115,6 +115,11 @@ export function resumeUrl(card: Card): string {
 }
 
 /** A card shaped for lib/plan.ts, which plans over OpenVideo. */
+/** Whether Stash takes a tab in this language: with goals set, only goal languages, so unrelated YouTube tabs stay open. */
+export function stashesLang(lang: Lang | null, goalLangs: Lang[]): boolean {
+  return goalLangs.length === 0 || (lang !== null && goalLangs.includes(lang));
+}
+
 export function asPlannable(card: Card, tab?: OpenVideo): OpenVideo {
   return {
     tabId: tab?.tabId ?? -1,

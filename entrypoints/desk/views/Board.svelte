@@ -1,7 +1,7 @@
 <script lang="ts">
   import { tick } from "svelte";
   import { data } from "../../../lib/data.svelte";
-  import { asPlannable, columnSeconds, move, remove as removeCard, upsert, type Board as BoardState, type Column } from "../../../lib/board";
+  import { asPlannable, columnSeconds, move, remove as removeCard, stashesLang, upsert, type Board as BoardState, type Column } from "../../../lib/board";
   import { duration, endsAt, minutes } from "../../../lib/format";
   import { englishName } from "../../../lib/languages";
   import { langColor } from "../../../lib/colors.svelte";
@@ -62,7 +62,7 @@
     return out;
   });
   const playing = $derived(lanes.playing[0] ?? null);
-  const otherTabs = $derived(data.tabs.filter((tab) => tab.tabId !== data.nowPlaying?.tabId));
+  const otherTabs = $derived(data.tabs.filter((tab) => tab.tabId !== data.nowPlaying?.tabId && stashesLang(tab.lang, goalLangs)));
   const fill = $derived(
     planSession(
       lanes.inbox.map((row) => asPlannable(row.card, row.tab ?? undefined)),
@@ -472,10 +472,12 @@
     {:else if otherTabs.length}
       <div class="stash">
         <p class="stash-text">
-          <b>{otherTabs.length} YouTube {otherTabs.length === 1 ? "tab" : "tabs"} open</b>
-          <span class="dim">They move to Inbox with their place saved, and the tabs close.</span>
+          <b>{otherTabs.length} {otherTabs.length === 1 ? "tab" : "tabs"} open in {goalLangs.length ? "your languages" : "YouTube"}</b>
+          <span class="dim">
+            They move to Inbox with their place saved, and the tabs close.{goalLangs.length ? " Tabs in other languages stay open." : ""}
+          </span>
         </p>
-        <button class="btn small" type="button" onclick={stash}>Stash all tabs</button>
+        <button class="btn small" type="button" onclick={stash}>Stash tabs</button>
       </div>
     {/if}
 
