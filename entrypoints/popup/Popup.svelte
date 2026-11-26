@@ -255,7 +255,7 @@
 
       {#if data.nowPlaying}
         <div class="now">
-          <span class="pulse" aria-hidden="true"></span>
+          <span class="live-dot" aria-hidden="true"></span>
           <p class="now-text"><span class="now-label">Playing</span><span class="now-title">{nowTitle}</span></p>
           <div class="now-buttons">
             {#if data.nowPlaying.session}
@@ -545,22 +545,13 @@
     outline-color: var(--on-ink);
   }
 
-  .pulse {
+  .live-dot {
     flex: none;
     width: 8px;
     height: 8px;
     border-radius: 50%;
     /* Sits on the inverted card: bright green on dark ink, deep green on light ink. */
-    --p: light-dark(#3ddc84, #15803d);
-    background: var(--p);
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--p) 60%, transparent);
-    animation: pulse 1.6s ease-out infinite;
-  }
-
-  @keyframes pulse {
-    to {
-      box-shadow: 0 0 0 8px color-mix(in srgb, var(--p) 0%, transparent);
-    }
+    background: light-dark(#3ddc84, #15803d);
   }
 
   .now-text {
