@@ -85,34 +85,42 @@
     gap: 8px;
     min-width: 0;
     padding: 10px;
-    border-radius: var(--r-md);
+    border-radius: 10px;
     background: var(--raised);
-    box-shadow: 0 0 0 1px var(--line);
+    box-shadow: var(--lift);
+    transition: box-shadow 0.15s ease, transform 0.12s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .card:hover {
+    box-shadow: 0 0 0 1px var(--line-2), 0 4px 12px -6px var(--shadow);
   }
 
   .card.selected {
-    box-shadow: 0 0 0 2px var(--ink);
+    box-shadow: 0 0 0 2px var(--c);
   }
 
   .check {
     position: absolute;
     top: 14px;
-    left: 14px;
+    inset-inline-start: 14px;
     z-index: 1;
     display: grid;
     place-items: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 8px;
-    background: var(--raised);
-    box-shadow: 0 1px 3px var(--shadow);
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    background: rgb(14 13 12 / 0.72);
+    backdrop-filter: blur(4px);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22);
+    cursor: pointer;
   }
 
   .check input {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     margin: 0;
-    accent-color: var(--ink);
+    accent-color: var(--c);
+    cursor: pointer;
   }
 
   .open {
@@ -139,8 +147,10 @@
     display: block;
     aspect-ratio: 16 / 9;
     overflow: hidden;
-    border-radius: 6px;
+    border-radius: 8px;
     background: linear-gradient(135deg, color-mix(in srgb, var(--c) 55%, #fff), var(--c));
+    outline: 1px solid light-dark(oklch(0 0 0 / 0.1), oklch(1 0 0 / 0.12));
+    outline-offset: -1px;
   }
 
   .thumb img {
@@ -155,10 +165,10 @@
     display: -webkit-box;
     min-width: 0;
     overflow: hidden;
-    font-size: 14px;
+    font-size: 13.5px;
     font-weight: 700;
-    line-height: 1.25;
-    overflow-wrap: anywhere;
+    line-height: 1.3;
+    overflow-wrap: break-word;
     line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;

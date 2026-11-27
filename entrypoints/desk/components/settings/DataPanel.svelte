@@ -5,27 +5,40 @@
   import { ankiTsv, clozemasterCsv } from "../../../../lib/export";
   import { englishName } from "../../../../lib/languages";
 
-  const KNOWN_KEYS = ["goals", "log", "sentences", "sessions", "meta", "overrides", "watched", "board", "logBackground", "manual", "baseline", "goalPeriods", "follows"] as const;
+  const KNOWN_KEYS = [
+    "goals",
+    "log",
+    "sentences",
+    "sessions",
+    "meta",
+    "overrides",
+    "watched",
+    "board",
+    "logBackground",
+    "manual",
+    "baseline",
+    "goalPeriods",
+    "follows",
+  ] as const;
   type Known = (typeof KNOWN_KEYS)[number];
 
   let message = $state("");
   let busy = $state(false);
   let confirmingClear = $state(false);
 
-  /** Languages with saved sentences, most sentences first. */
   const sentenceLangs = $derived.by(() => {
     const counts = new Map<string, number>();
     for (const sentence of data.sentences) counts.set(sentence.lang, (counts.get(sentence.lang) ?? 0) + 1);
-    return [...counts].sort((a, b) => b[1] - a[1]);
+    return [...counts].sort((first, second) => second[1] - first[1]);
   });
+
   let exportLang = $state("");
-  // Starts on the language with the most sentences, and moves off one that no longer has any.
   $effect(() => {
     if (!sentenceLangs.some(([lang]) => lang === exportLang)) exportLang = sentenceLangs[0]?.[0] ?? "";
   });
   const chosenLang = $derived(exportLang);
 
-  function download(text: string, name: string, type: string) {
+  function download(text: string, name: string, type: string): void {
     const url = URL.createObjectURL(new Blob([text], { type }));
     const link = document.createElement("a");
     link.href = url;
@@ -36,7 +49,7 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  function exportSentences(target: "anki" | "clozemaster") {
+  function handleExportSentences(target: "anki" | "clozemaster"): void {
     message = "";
     const chosen = data.sentences.filter((sentence) => sentence.lang === chosenLang);
     const name = `${englishName(chosenLang).toLowerCase().replace(/\W+/g, "-")}-sentences-${dateKey()}`;
@@ -57,7 +70,7 @@
 
   const missing = $derived(data.tabs.filter((video) => video.duration <= 0).length);
 
-  async function retryDetails() {
+  async function handleRetryDetails(): Promise<void> {
     busy = true;
     message = "";
     try {
@@ -76,7 +89,7 @@
     return key === "sentences" || key === "sessions" || key === "manual" ? Array.isArray(value) : isPlainObject(value);
   }
 
-  async function exportData() {
+  async function handleExportData(): Promise<void> {
     busy = true;
     message = "";
     try {
@@ -97,7 +110,7 @@
     }
   }
 
-  async function importFile(event: Event) {
+  async function handleImportFile(event: Event): Promise<void> {
     const input = event.currentTarget as HTMLInputElement;
     const file = input.files?.[0];
     input.value = "";
@@ -133,7 +146,7 @@
     }
   }
 
-  async function clearLog() {
+  async function handleClearLog(): Promise<void> {
     busy = true;
     message = "";
     try {
@@ -154,18 +167,18 @@
 
 <div class="panel">
   <h3>Data</h3>
-  <p class="intro">Everything is stored in this browser only. Export saves a copy as one JSON file.</p>
+  <p class="intro">Everything stays local in this browser. Export creates a single JSON backup file.</p>
 
   <div class="block">
     <h4>Backup</h4>
-    <p class="intro">
-      Export includes goals, listening history, the board, sentences, sessions and video overrides. Import reads a file made by Export and replaces the sections it contains. Sections missing from the file stay as they are.
+    <p class="sub">
+      Includes goals, listening history, board cards, sentences, sessions, and language overrides. Import replaces only the sections present in the file.
     </p>
     <div class="actions">
-      <button type="button" class="btn small" disabled={busy} onclick={exportData}>Export</button>
-      <label class="btn small ghost import" class:disabled={busy}>
-        Import a backup…
-        <input class="sr-only" type="file" accept="application/json,.json" disabled={busy} onchange={importFile} />
+      <button type="button" class="btn small" disabled={busy} onclick={handleExportData}>Export backup</button>
+      <label class={["btn small soft import", busy && "disabled"]}>
+        Import backup…
+        <input class="sr-only" type="file" accept="application/json,.json" disabled={busy} onchange={handleImportFile} />
       </label>
     </div>
   </div>
@@ -173,10 +186,10 @@
   <div class="block">
     <h4>Export sentences</h4>
     {#if sentenceLangs.length === 0}
-      <p class="intro">Sentences you save on YouTube with S can be exported here for Anki or Clozemaster.</p>
+      <p class="sub">Sentences saved on YouTube with S can be exported here for Anki or Clozemaster.</p>
     {:else}
-      <p class="intro">
-        One language per file. Anki gets the sentence, translation, source and a link to that moment in the video. Clozemaster gets the sentence and translation, and picks the word to blank out itself.
+      <p class="sub">
+        One language per file. Anki exports sentence, translation, source, and timestamp link. Clozemaster exports sentence and translation.
       </p>
       <div class="actions">
         <select class="input lang-select" bind:value={exportLang} aria-label="Language to export">
@@ -184,33 +197,33 @@
             <option value={lang}>{englishName(lang)} · {count}</option>
           {/each}
         </select>
-        <button type="button" class="btn small ghost" onclick={() => exportSentences("anki")}>For Anki</button>
-        <button type="button" class="btn small ghost" onclick={() => exportSentences("clozemaster")}>For Clozemaster</button>
+        <button type="button" class="btn small soft" onclick={() => handleExportSentences("anki")}>For Anki</button>
+        <button type="button" class="btn small soft" onclick={() => handleExportSentences("clozemaster")}>For Clozemaster</button>
       </div>
     {/if}
   </div>
 
   <div class="block">
     <h4>Video details</h4>
-    <p class="intro">
+    <p class="sub">
       {missing
         ? `${missing} open ${missing === 1 ? "tab is" : "tabs are"} missing a length or language.`
         : "Every open tab has its length and language."}
-      Details for sleeping tabs are fetched from YouTube in the background, so the tabs never need reloading.
+      Sleeping tabs are fetched in the background without reloading them.
     </p>
-    <button type="button" class="btn small ghost" disabled={busy} onclick={retryDetails}>Look them up again</button>
+    <button type="button" class="btn small soft" disabled={busy} onclick={handleRetryDetails}>Look them up again</button>
   </div>
 
-  <div class="block">
+  <div class="block danger-zone">
     <h4>Listening history</h4>
-    <p class="intro">Removes the time counted for every language on every day, including time logged by hand. Goals, hours before tracking and sentences stay.</p>
+    <p class="sub">Removes all logged listening time across every language, including manual entries. Goals, baseline hours, and sentences stay.</p>
     {#if confirmingClear}
       <div class="actions">
-        <button type="button" class="btn small danger" disabled={busy} onclick={clearLog}>Yes, clear all listening time</button>
-        <button type="button" class="btn small ghost" onclick={() => (confirmingClear = false)}>Cancel</button>
+        <button type="button" class="btn small danger" disabled={busy} onclick={handleClearLog}>Yes, clear all listening time</button>
+        <button type="button" class="btn small soft" onclick={() => (confirmingClear = false)}>Cancel</button>
       </div>
     {:else}
-      <button type="button" class="btn small ghost clear" onclick={() => (confirmingClear = true)}>Clear listening history</button>
+      <button type="button" class="btn small clear" onclick={() => (confirmingClear = true)}>Clear listening history</button>
     {/if}
   </div>
 
@@ -220,42 +233,61 @@
 </div>
 
 <style>
-  h3 {
-    margin: 0 0 8px;
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: -0.01em;
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
   }
 
-  h4 {
-    margin: 0 0 6px;
-    font-size: 16px;
-    font-weight: 700;
+  h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.015em;
   }
 
   .intro {
-    margin: 0 0 12px;
-    font-size: 15px;
-    line-height: 1.45;
+    margin: -6px 0 2px;
+    font-size: 14px;
+    line-height: 1.5;
     color: var(--ink-2);
-    max-width: 40em;
   }
 
   .block {
-    padding: 20px 0;
-    border-top: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 12px;
+    background: var(--bg);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
 
-  .block .intro {
-    margin-bottom: 14px;
-    font-size: 14px;
+  .danger-zone {
+    background: light-dark(var(--bg), color-mix(in srgb, var(--danger) 6%, var(--bg)));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 30%, var(--line));
+  }
+
+  h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 750;
+  }
+
+  .sub {
+    margin: -4px 0 2px;
+    font-size: 13.5px;
+    line-height: 1.45;
+    color: var(--ink-2);
+    max-width: 44em;
   }
 
   .actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
   }
 
   .import {
@@ -274,23 +306,33 @@
 
   .lang-select {
     min-height: 2.25rem;
-    padding-right: 2rem;
+    padding-inline-end: 2rem;
+    background: var(--raised);
   }
 
   .clear {
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
     color: var(--danger);
-    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--danger) 45%, var(--line));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 40%, transparent);
+  }
+
+  .clear:hover {
+    background: var(--danger);
+    color: #fff;
   }
 
   .btn.danger {
     background: var(--danger);
-    color: var(--on-ink);
+    color: #fff;
   }
 
   .status {
-    margin: 16px 0 0;
-    font-size: 14px;
+    margin: 0;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: var(--soft);
+    font-size: 13.5px;
     font-weight: 600;
-    color: var(--ink-2);
+    color: var(--ink);
   }
 </style>

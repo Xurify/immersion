@@ -7,11 +7,9 @@
     lane: LaneKey;
     title: string;
     meta: string;
-    /** Tooltip for the count chip. */
     metaNote?: string;
     rows: Row[];
     hint: string;
-    /** Where the drop placeholder sits, counted among the rows that are not being dragged. */
     slot: number | null;
     dragId: string | null;
     stop: string | null;
@@ -36,35 +34,41 @@
     later: "M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z",
   };
 
-  const entries = $derived.by(() => {
-    const out: { key: string; entry: Entry }[] = [];
+  const entries = $derived.by((): { key: string; entry: Entry }[] => {
+    const output: { key: string; entry: Entry }[] = [];
     let seen = 0;
     for (const row of rows) {
       if (row.videoId === dragId) {
-        out.push({ key: row.videoId, entry: { kind: "row", row } });
+        output.push({ key: row.videoId, entry: { kind: "row", row } });
         continue;
       }
-      if (slot === seen) out.push({ key: "slot", entry: { kind: "slot" } });
-      out.push({ key: row.videoId, entry: { kind: "row", row } });
+      if (slot === seen) output.push({ key: "slot", entry: { kind: "slot" } });
+      output.push({ key: row.videoId, entry: { kind: "row", row } });
       seen++;
     }
-    if (slot !== null && slot >= seen) out.push({ key: "slot", entry: { kind: "slot" } });
-    return out;
+    if (slot !== null && slot >= seen) output.push({ key: "slot", entry: { kind: "slot" } });
+    return output;
   });
 </script>
 
 <section
-  class="lane"
-  class:playing={lane === "playing" && rows.length > 0}
-  class:idle={lane === "playing" && rows.length === 0}
-  class:targeted
+  class={["lane", targeted && "targeted"]}
   aria-labelledby="lane-{lane}"
   ondragover={(event) => onover(event, lane)}
   ondrop={(event) => ondrop(event, lane)}
 >
   <header class="head">
     <h3 id="lane-{lane}">
-      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d={ICON[lane]} fill={lane === "playing" ? "currentColor" : "none"} stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+        <path
+          d={ICON[lane]}
+          fill={lane === "playing" ? "currentColor" : "none"}
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
       {title}
     </h3>
     {#if meta}<span class="meta" title={metaNote || undefined}>{meta}</span>{/if}
@@ -105,65 +109,33 @@
     min-width: 0;
     min-height: 0;
     padding: 12px;
-    border-radius: var(--r-xl);
-    background: color-mix(in srgb, var(--soft) 70%, var(--bg));
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 60%, transparent);
-  }
-
-  .lane.playing {
-    background: var(--ink);
-    color: var(--on-ink);
-    box-shadow: 0 16px 40px -20px var(--shadow);
-  }
-
-  /* Nothing playing: an open slot rather than a lit panel. */
-  .lane.idle {
-    background: transparent;
-    box-shadow: none;
-    outline: 1.5px dashed var(--line-2);
-    outline-offset: -1.5px;
-  }
-
-  .lane.idle .list {
-    justify-content: center;
-  }
-
-  .lane.idle .hint {
-    align-self: center;
-    max-width: 16em;
-    text-align: center;
-  }
-
-  .lane.playing :global(:focus-visible) {
-    outline-color: var(--on-ink);
+    border-radius: 14px;
+    background: var(--raised-2);
+    box-shadow: inset 0 0 0 1px var(--line);
+    transition: box-shadow 0.15s ease;
   }
 
   .lane.targeted {
     box-shadow: inset 0 0 0 2px var(--focus);
-    outline: none;
-  }
-
-  .lane.playing.targeted {
-    box-shadow: inset 0 0 0 2px var(--on-ink);
   }
 
   .head {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 4px 8px;
-    min-height: 28px;
-    margin: 2px 4px 2px;
+    gap: 8px;
+    min-height: 24px;
+    padding-inline: 2px;
   }
 
   h3 {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     margin: 0;
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 13.5px;
+    font-weight: 750;
+    letter-spacing: -0.01em;
     white-space: nowrap;
   }
 
@@ -171,29 +143,15 @@
     color: var(--dim);
   }
 
-  .playing h3 svg {
-    color: inherit;
-  }
-
   .meta {
     min-width: 0;
     overflow: hidden;
-    padding: 2px 8px;
-    border-radius: var(--pill);
-    background: var(--raised);
-    box-shadow: 0 0 0 1px var(--line);
-    color: var(--ink-2);
+    color: var(--dim);
     font-size: 12px;
     font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
-  }
-
-  .playing .meta {
-    box-shadow: none;
-    background: color-mix(in srgb, var(--on-ink) 14%, transparent);
-    color: color-mix(in srgb, var(--on-ink) 80%, transparent);
   }
 
   .top,
@@ -202,14 +160,14 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    margin: 0 4px;
-    font-size: 13px;
-    text-wrap: balance;
+    padding-inline: 2px;
+    font-size: 12.5px;
   }
 
   .foot {
     flex: none;
-    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
   }
 
   .list {
@@ -220,36 +178,32 @@
     gap: 8px;
     min-height: 0;
     margin: 0;
-    padding: 4px;
+    padding: 2px;
     overflow-y: auto;
     overscroll-behavior: contain;
     list-style: none;
   }
 
   .hint {
-    margin: 4px 0;
+    margin: 6px 4px;
     font-size: 13px;
     line-height: 1.45;
     text-wrap: balance;
     color: var(--dim);
   }
 
-  .playing .hint {
-    color: color-mix(in srgb, var(--on-ink) 70%, transparent);
-  }
-
   .slot {
     flex: none;
-    height: 58px;
-    border: 2px dashed color-mix(in srgb, var(--ink) 30%, transparent);
-    border-radius: 12px;
+    height: 62px;
+    border: 2px dashed color-mix(in srgb, var(--focus) 55%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--focus) 6%, transparent);
   }
 
-  /* Five columns side by side on a desk; horizontally scrolling columns on narrow windows. */
-  @media (max-width: 1360px) {
+  @media (max-width: 1100px) {
     .lane {
-      flex: 0 0 280px;
-      min-width: 260px;
+      flex: 0 0 300px;
+      min-width: 280px;
       scroll-snap-align: start;
     }
   }

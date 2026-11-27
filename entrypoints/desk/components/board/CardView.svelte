@@ -1,53 +1,53 @@
 <script lang="ts">
   import { clock, thumbnail } from "../../../../lib/format";
-  import { englishName } from "../../../../lib/languages";
   import LangName from "../../../../ui/LangName.svelte";
   import { langColor } from "../../../../lib/colors.svelte";
   import type { Column } from "../../../../lib/board";
-  import { MOVE_LABEL, timeOf, type CardActions, type Row } from "./rows";
+  import { MOVE_LABEL, type CardActions, type Row } from "./rows";
 
-  let {
-    row,
-    menuOpen,
-    stop,
-    dragging,
-    actions,
-  }: { row: Row; menuOpen: boolean; stop: boolean; dragging: boolean; actions: CardActions } = $props();
+  interface Props {
+    row: Row;
+    menuOpen: boolean;
+    stop: boolean;
+    dragging: boolean;
+    actions: CardActions;
+  }
+
+  let { row, menuOpen, stop, dragging, actions }: Props = $props();
 
   const COLUMNS: Column[] = ["next", "inbox", "later", "done"];
 
   let thumbFailed = $state(false);
-  let cardEl = $state<HTMLLIElement>();
+  let cardElement = $state<HTMLLIElement>();
   const colour = $derived(langColor(row.lang));
   const gradient = $derived(`linear-gradient(135deg, ${colour}, color-mix(in srgb, ${colour} 45%, #000))`);
   const playing = $derived(row.lane === "playing");
   const percent = $derived(row.duration > 0 ? Math.min(100, (row.position / row.duration) * 100) : 0);
-  // Zero length means the video's details never arrived; a dash reads better than 0:00.
-  const time = $derived.by(() => {
+
+  const time = $derived.by((): string => {
     if (row.duration <= 0) return "";
     return row.lane === "done" || row.position <= 0 ? clock(row.duration) : `${clock(row.left)} left`;
   });
 
-  // "12 of 25 min", "35 of 39 sec" for clips under a minute, or "12 min" when the length is unknown.
-  const watchedText = $derived.by(() => {
-    if (row.duration > 0 && row.duration < 60) return `${Math.min(Math.round(row.watched), Math.round(row.duration))} of ${Math.round(row.duration)} sec`;
+  const watchedText = $derived.by((): string => {
+    if (row.duration > 0 && row.duration < 60) {
+      return `${Math.min(Math.round(row.watched), Math.round(row.duration))} of ${Math.round(row.duration)} sec`;
+    }
     const watched = Math.max(1, Math.round(row.watched / 60));
     if (row.duration <= 0) return `${watched} min`;
     const total = Math.max(1, Math.round(row.duration / 60));
     return `${Math.min(watched, total)} of ${total} min`;
   });
 
-  function setLang() {
-    if (cardEl) actions.setLang(row, cardEl);
+  function handleSetLang(): void {
+    if (cardElement) actions.setLang(row, cardElement);
   }
 </script>
 
 <li
-  bind:this={cardEl}
-  class="card"
-  class:now={playing}
-  class:done={row.lane === "done"}
-  class:dragging
+  bind:this={cardElement}
+  class={["card", playing && "now", row.lane === "done" && "done", dragging && "dragging"]}
+  style:--c={colour}
   draggable="true"
   ondragstart={(event) => actions.dragstart(event, row)}
   ondragend={() => actions.dragend()}
@@ -64,11 +64,13 @@
   >
     <div class="thumb" style:background={gradient}>
       {#if !thumbFailed}
-        <img src={thumbnail(row.videoId)} alt="" loading="lazy" width="96" height="54" onerror={() => (thumbFailed = true)} />
+        <img src={thumbnail(row.videoId)} alt="" loading="lazy" width="100" height="56" onerror={() => (thumbFailed = true)} />
       {/if}
       {#if time}<span class="len">{time}</span>{/if}
       {#if row.position > 0 || playing}
         <span class="seen" aria-hidden="true"><i style:width="{percent}%" style:background={colour}></i></span>
+      {:else}
+        <span class="lang-edge" aria-hidden="true"></span>
       {/if}
     </div>
     <div class="text">
@@ -94,14 +96,18 @@
       aria-expanded={menuOpen}
       onclick={() => actions.menu(row)}
     >
-      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="3" cy="8" r="1.5" fill="currentColor" /><circle cx="8" cy="8" r="1.5" fill="currentColor" /><circle cx="13" cy="8" r="1.5" fill="currentColor" /></svg>
+      <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+        <circle cx="3" cy="8" r="1.4" fill="currentColor" />
+        <circle cx="8" cy="8" r="1.4" fill="currentColor" />
+        <circle cx="13" cy="8" r="1.4" fill="currentColor" />
+      </svg>
     </button>
   {/if}
 
   {#if menuOpen}
     <div class="menu">
       <button type="button" onclick={() => actions.play(row)}>Play now</button>
-      <button type="button" onclick={setLang}>Set language</button>
+      <button type="button" onclick={handleSetLang}>Set language</button>
       {#if row.card.channel}
         <button type="button" onclick={() => actions.follow(row)}>Follow {row.card.channel}</button>
       {/if}
@@ -111,7 +117,7 @@
         {/if}
       {/each}
       {#if row.source}
-        <button type="button" onclick={() => actions.remove(row)}>Remove from board</button>
+        <button type="button" class="danger" onclick={() => actions.remove(row)}>Remove from board</button>
       {/if}
     </div>
   {/if}
@@ -121,18 +127,18 @@
   .card {
     position: relative;
     flex: none;
-    border-radius: 14px;
+    border-radius: 11px;
     background: var(--raised);
     box-shadow: var(--lift);
-    transition: box-shadow 0.15s ease, transform 0.15s ease;
+    transition: box-shadow 0.15s ease, transform 0.14s cubic-bezier(0.2, 0, 0, 1);
   }
 
   .card:hover {
-    box-shadow: 0 0 0 1px var(--line-2), 0 10px 24px -12px var(--shadow);
+    box-shadow: 0 0 0 1px var(--line-2), 0 4px 12px -6px var(--shadow);
   }
 
   .card:has(.hit:active) {
-    transform: scale(0.99);
+    transform: scale(0.98);
   }
 
   .card.dragging {
@@ -140,27 +146,21 @@
   }
 
   .card.done .thumb {
-    opacity: 0.55;
+    opacity: 0.58;
   }
 
   .card.done .title {
     color: var(--dim);
     text-decoration: line-through;
-    text-decoration-color: color-mix(in srgb, var(--ink) 50%, transparent);
-  }
-
-  .card.now {
-    background: color-mix(in srgb, var(--on-ink) 8%, var(--ink));
-    color: var(--on-ink);
-    box-shadow: none;
+    text-decoration-color: color-mix(in srgb, var(--ink) 45%, transparent);
   }
 
   .hit {
     display: grid;
-    grid-template-columns: 96px minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: 11px;
     padding: 8px;
-    border-radius: 14px;
+    border-radius: 11px;
     cursor: pointer;
   }
 
@@ -168,8 +168,10 @@
     position: relative;
     align-self: start;
     aspect-ratio: 16 / 9;
-    border-radius: 8px;
+    border-radius: 6px;
     overflow: hidden;
+    outline: 1px solid light-dark(oklch(0 0 0 / 0.1), oklch(1 0 0 / 0.12));
+    outline-offset: -1px;
   }
 
   .thumb img {
@@ -180,22 +182,21 @@
 
   .len {
     position: absolute;
-    right: 4px;
+    inset-inline-end: 4px;
     bottom: 6px;
     padding: 1px 5px;
     border-radius: 4px;
     background: rgb(0 0 0 / 0.78);
     color: #fff;
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 1.4;
+    font-size: 10.5px;
+    font-weight: 650;
+    line-height: 1.35;
     font-variant-numeric: tabular-nums;
   }
 
   .seen {
     position: absolute;
-    left: 0;
-    right: 0;
+    inset-inline: 0;
     bottom: 0;
     height: 3px;
     background: rgb(255 255 255 / 0.3);
@@ -206,13 +207,22 @@
     height: 100%;
   }
 
+  .lang-edge {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 2.5px;
+    background: var(--c);
+    opacity: 0.85;
+  }
+
   .text {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
+    gap: 5px;
     min-width: 0;
-    padding: 2px 28px 2px 0;
+    padding: 1px 24px 1px 0;
   }
 
   .title {
@@ -221,7 +231,7 @@
     font-size: 13.5px;
     font-weight: 650;
     line-height: 1.3;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -238,8 +248,8 @@
   }
 
   .meta .dot {
-    width: 8px;
-    height: 8px;
+    width: 7.5px;
+    height: 7.5px;
     border-radius: 2.5px;
   }
 
@@ -252,8 +262,7 @@
     color: var(--ink-2);
   }
 
-  /* Narrow columns keep the language and drop the channel rather than cut both. */
-  @container lane (max-width: 330px) {
+  @container lane (max-width: 260px) {
     .channel {
       display: none;
     }
@@ -266,51 +275,41 @@
     white-space: nowrap;
   }
 
-  .now .text {
-    padding-right: 0;
-  }
-
-  .now .meta,
-  .now .meta :global(.native) {
-    color: color-mix(in srgb, var(--on-ink) 70%, transparent);
-  }
-
   .watched {
     color: var(--ink-2);
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
 
   .tag {
-    padding: 0 7px;
-    border-radius: var(--pill);
+    padding: 1px 6px;
+    border-radius: 5px;
     background: var(--soft);
-    color: var(--ink-2);
-    font-size: 11px;
+    color: var(--dim);
+    font-size: 10.5px;
     font-weight: 600;
-    line-height: 1.6;
+    line-height: 1.5;
   }
 
   .more {
     position: absolute;
-    top: 4px;
-    right: 4px;
+    top: 5px;
+    inset-inline-end: 5px;
     display: grid;
     place-items: center;
-    width: 2rem;
-    height: 2rem;
+    width: 1.85rem;
+    height: 1.85rem;
     border: 0;
     border-radius: var(--pill);
     background: transparent;
     color: var(--dim);
+    transition: opacity 0.14s ease, background-color 0.14s ease, color 0.14s ease;
   }
 
-  /* With a mouse, the menu button waits for hover so the titles read clean. */
   @media (hover: hover) {
     .more {
       opacity: 0;
-      transition: opacity 0.15s ease;
     }
 
     .card:hover .more,
@@ -341,11 +340,17 @@
     border-radius: 8px;
     background: transparent;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 550;
     text-align: start;
+    transition: background-color 0.12s ease, color 0.12s ease;
   }
 
   .menu button:hover {
     background: var(--soft);
+  }
+
+  .menu button.danger:hover {
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+    color: var(--danger);
   }
 </style>

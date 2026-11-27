@@ -154,15 +154,16 @@
 
 <style>
   .review {
+    position: relative;
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 18px;
     width: 100%;
     max-width: 960px;
     min-height: 0;
     margin: 0 auto;
-    padding: 40px var(--gutter) 64px;
+    padding: 36px var(--gutter) 64px;
   }
 
   .head {
@@ -170,20 +171,21 @@
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    gap: 6px 16px;
+    gap: 8px 16px;
   }
 
   .count {
     margin: 0;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 800;
     letter-spacing: -0.02em;
     line-height: 1.1;
+    font-variant-numeric: tabular-nums;
   }
 
   .due {
     margin: 0;
-    font-size: 14px;
+    font-size: 13.5px;
     color: var(--ink-2);
   }
 
@@ -191,39 +193,48 @@
     display: inline-flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 4px 16px;
+    gap: 8px;
   }
 
   .item {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-weight: 600;
+    gap: 7px;
+    min-height: 30px;
+    padding: 0 11px;
+    border-radius: var(--pill);
+    background: var(--raised);
+    box-shadow: inset 0 0 0 1px var(--line);
+    font-weight: 650;
     font-variant-numeric: tabular-nums;
   }
 
   .item :global(.native) {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .strip {
     display: flex;
-    gap: 4px;
+    gap: 5px;
   }
 
   .step {
     flex: 1;
-    height: 4px;
-    border-radius: 3px;
-    background: var(--line);
+    height: 6px;
+    border-radius: var(--pill);
+    background: var(--soft);
+    box-shadow: inset 0 0 0 1px var(--line);
+    transition: background-color 0.2s ease;
   }
 
   .step.done {
     background: var(--ink);
+    box-shadow: none;
   }
 
   .step.now {
     background: var(--now);
+    box-shadow: none;
   }
 
   .error {

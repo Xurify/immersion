@@ -109,8 +109,19 @@
           </button>
         {/each}
       </div>
-      <button type="button" class="btn small ghost" aria-expanded={logging} onclick={() => (logging = !logging)}>+ Log time</button>
-      <button type="button" class="btn small ghost" onclick={onsettings}>Edit goals</button>
+      <button type="button" class="btn small soft" aria-expanded={logging} onclick={() => (logging = !logging)}>
+        <svg viewBox="0 0 14 14" width="12" height="12" aria-hidden="true">
+          <path d="M7 2.5v9M2.5 7h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+        Log time
+      </button>
+      <button type="button" class="btn small soft" onclick={onsettings}>
+        <svg viewBox="0 0 14 14" width="12" height="12" aria-hidden="true">
+          <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <path d="M7 4.5V7l1.8 1.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        Edit goals
+      </button>
     </div>
   </header>
 
@@ -202,11 +213,11 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 40px;
+    gap: 28px;
     width: 100%;
     max-width: 1440px;
     margin: 0 auto;
-    padding: 32px var(--gutter) 64px;
+    padding: 24px var(--gutter) 64px;
   }
 
   .hero {
@@ -214,25 +225,30 @@
     flex-wrap: wrap;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 24px 32px;
+    gap: 20px 32px;
+    padding: 4px 0 0;
   }
 
   .lead {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   }
 
   .total {
-    margin: 4px 0 0;
-    font-size: clamp(88px, 10vw, 136px);
+    margin: 2px 0 0;
+    font-size: clamp(64px, 7.5vw, 96px);
+  }
+
+  .total .unit {
+    color: var(--ink-2);
   }
 
   .facts {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 8px;
+    margin-top: 4px;
   }
 
   .chip.up {

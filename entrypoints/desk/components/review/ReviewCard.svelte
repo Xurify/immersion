@@ -146,11 +146,10 @@
   .card {
     display: flex;
     flex-direction: column;
-    padding: clamp(24px, 4vw, 48px);
-    border-radius: 28px;
-    background-image: radial-gradient(120% 80% at 100% 0%, rgb(255 255 255 / 0.16), transparent 60%);
+    padding: clamp(24px, 4vw, 44px);
+    border-radius: 20px;
     color: #fff;
-    box-shadow: 0 1px 0 rgb(255 255 255 / 0.14) inset, 0 24px 60px -28px color-mix(in srgb, var(--panel) 80%, #000);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), 0 2px 8px rgb(0 0 0 / 0.12);
   }
 
   .card button:focus-visible,
@@ -285,7 +284,7 @@
   }
 
   .grade:active {
-    transform: scale(0.98);
+    transform: scale(0.96);
   }
 
   .grade:disabled {

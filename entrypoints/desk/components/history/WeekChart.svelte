@@ -93,21 +93,38 @@
   .track {
     position: relative;
     height: 32px;
-    border-radius: 8px;
+    border-radius: 10px;
     background: var(--soft);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent);
+    transition: background-color 0.14s ease;
+  }
+
+  .row:hover .track {
+    background: color-mix(in srgb, var(--line) 45%, var(--soft));
   }
 
   .bar {
     display: flex;
     gap: 2px;
     height: 100%;
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
   }
 
   .bar i {
     flex: none;
     height: 100%;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22);
+  }
+
+  .bar i:first-child {
+    border-start-start-radius: 10px;
+    border-end-start-radius: 10px;
+  }
+
+  .bar i:last-child {
+    border-start-end-radius: 8px;
+    border-end-end-radius: 8px;
   }
 
   /* Drawn per row; the row gaps break it into the dashes of one goal line. */

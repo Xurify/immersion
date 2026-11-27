@@ -67,8 +67,8 @@
           (rank(a) === 0 ? goalOrder.indexOf(a.lang ?? "") - goalOrder.indexOf(b.lang ?? "") : b.seconds - a.seconds),
       );
   });
-  // Two or three groups sit side by side; one group or four or more run full width.
-  const sideBySide = $derived(groups.length >= 2 && groups.length <= 3);
+  // Two or more groups flow in a 2-column bento grid; large groups (>6) or odd-last span full width.
+  const useGrid = $derived(groups.length >= 2);
 
   const screen = $derived(groups.flatMap((group) => group.videos));
   // Selection survives a search: hidden picks still count, in on-screen order.
@@ -182,48 +182,59 @@
   {#if data.loaded}
     <h1 class="sr-only">All videos</h1>
 
-    <header class="top">
-      {#if tabs.length}
-        <div class="total">
-          {#if knownCount > 0}
-            <p class="big">{hoursClock(totalSeconds)}<span class="unit">h</span></p>
-          {:else}
-            <p class="reading-now">Reading video details…</p>
-          {/if}
-          <p class="dim">
-            left in {tabs.length} open {tabs.length === 1 ? "tab" : "tabs"}{knownCount > 0 && loadingCount ? ` · ${loadingCount} still loading` : ""}
-          </p>
-        </div>
-      {/if}
+    <header class="hero-card">
+      <div class="top">
+        {#if tabs.length}
+          <div class="total">
+            {#if knownCount > 0}
+              <p class="big">{hoursClock(totalSeconds)}<span class="unit">h</span></p>
+            {:else}
+              <p class="reading-now">Reading video details…</p>
+            {/if}
+            <p class="dim">
+              left in {tabs.length} open {tabs.length === 1 ? "tab" : "tabs"}{knownCount > 0 && loadingCount ? ` · ${loadingCount} still loading` : ""}
+            </p>
+          </div>
+        {/if}
 
-      <div class="tools">
-        <div class="seg" role="group" aria-label="Show">
-          <button type="button" aria-current={source === "open" ? "true" : undefined} onclick={() => setSource("open")}>
-            Open tabs <span class="count">{tabs.length}</span>
-          </button>
-          <button type="button" aria-current={source === "saved" ? "true" : undefined} onclick={() => setSource("saved")}>
-            Saved sessions <span class="count">{data.sessions.length}</span>
-          </button>
-          <button type="button" aria-current={source === "reading" ? "true" : undefined} onclick={() => setSource("reading")}>
-            Reading list
-            {#if reading}<span class="count">{reading.length}</span>{/if}
-          </button>
+        <div class="tools">
+          <div class="seg" role="group" aria-label="Show">
+            <button type="button" aria-current={source === "open" ? "true" : undefined} onclick={() => setSource("open")}>
+              Open tabs <span class="count">{tabs.length}</span>
+            </button>
+            <button type="button" aria-current={source === "saved" ? "true" : undefined} onclick={() => setSource("saved")}>
+              Saved sessions <span class="count">{data.sessions.length}</span>
+            </button>
+            <button type="button" aria-current={source === "reading" ? "true" : undefined} onclick={() => setSource("reading")}>
+              Reading list
+              {#if reading}<span class="count">{reading.length}</span>{/if}
+            </button>
+          </div>
+          <div class="search-wrap">
+            <svg class="search-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+              <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+              <path d="M10.4 10.4 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            </svg>
+            <input
+              bind:this={searchEl}
+              bind:value={query}
+              type="search"
+              class="input search"
+              placeholder="Search videos"
+              aria-label="Search videos"
+              title="Press / to search"
+            />
+            {#if !query}
+              <kbd class="search-kbd" aria-hidden="true">/</kbd>
+            {/if}
+          </div>
         </div>
-        <input
-          bind:this={searchEl}
-          bind:value={query}
-          type="search"
-          class="input search"
-          placeholder="Search"
-          aria-label="Search videos"
-          title="Press / to search"
-        />
       </div>
-    </header>
 
-    {#if source === "open" && tabs.length}
-      <MixBar parts={mix} height={12} />
-    {/if}
+      {#if source === "open" && tabs.length}
+        <MixBar parts={mix} height={10} />
+      {/if}
+    </header>
 
     {#if problem}
       <p class="problem" role="alert">Could not do that. {problem}</p>
@@ -238,14 +249,15 @@
       {:else if !groups.length}
         <p class="empty dim">No open videos match “{query}”.</p>
       {:else}
-        <div class:columns={sideBySide} class:stack={!sideBySide}>
-          {#each groups as group (group.lang ?? "unknown")}
+        <div class:columns={useGrid} class:stack={!useGrid}>
+          {#each groups as group, index (group.lang ?? "unknown")}
+            {@const isOddLast = useGrid && groups.length % 2 === 1 && index === groups.length - 1}
             <LanguageColumn
               lang={group.lang}
               videos={group.videos}
               seconds={group.seconds}
               loading={group.loading}
-              wide={!sideBySide || group.videos.length > 8}
+              wide={!useGrid || group.videos.length > 6 || isOddLast}
               {longest}
               {selected}
               ontoggle={toggle}
@@ -304,72 +316,118 @@
   .videos {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
     width: 100%;
     max-width: 1440px;
     margin: 0 auto;
-    padding: 32px var(--gutter) 120px;
+    padding: 24px var(--gutter) 120px;
+  }
+
+  .hero-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 0 0;
   }
 
   .top {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 16px 32px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px 24px;
   }
 
   .total {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 4px 16px;
+    align-items: baseline;
+    gap: 4px 14px;
   }
 
   .total .big {
     margin: 0;
-    font-size: clamp(64px, 8vw, 84px);
-    line-height: 0.8;
+    font-size: clamp(46px, 5.5vw, 62px);
+    line-height: 0.85;
   }
 
   .total .unit {
     font-size: 0.38em;
+    color: var(--ink-2);
   }
 
   .reading-now {
     margin: 0;
-    font-size: clamp(28px, 3.5vw, 40px);
+    font-size: clamp(24px, 3vw, 34px);
     font-weight: 800;
     letter-spacing: -0.02em;
     line-height: 1.05;
   }
 
   .total p.dim {
-    margin: 0 0 4px;
-    font-size: 17px;
+    margin: 0;
+    font-size: 14.5px;
+    font-weight: 500;
   }
 
   .tools {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
 
-  .total + .tools {
-    margin-left: auto;
+  .search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-icon {
+    position: absolute;
+    inset-inline-start: 13px;
+    color: var(--dim);
+    pointer-events: none;
   }
 
   .search {
-    width: 240px;
+    width: 230px;
     min-height: 2.375rem;
     max-width: 100%;
+    padding-inline: 36px 32px;
+    border-radius: 10px;
+    background: var(--raised);
+  }
+
+  .search-kbd {
+    position: absolute;
+    inset-inline-end: 10px;
+    display: inline-grid;
+    place-items: center;
+    min-width: 20px;
+    height: 20px;
+    padding-inline: 5px;
+    border: 1px solid var(--line-2);
+    border-radius: 5px;
+    background: var(--raised);
+    color: var(--dim);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    pointer-events: none;
   }
 
   .columns {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
     gap: 14px;
+  }
+
+  @media (max-width: 820px) {
+    .columns {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 
   .stack {
