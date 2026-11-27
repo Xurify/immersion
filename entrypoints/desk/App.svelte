@@ -142,7 +142,7 @@
     display: flex;
     gap: 2px;
     padding: 3px;
-    border-radius: var(--pill);
+    border-radius: 11px;
     background: var(--soft);
     box-shadow: inset 0 0 0 1px var(--line);
   }
@@ -151,11 +151,11 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    min-height: 2.125rem;
-    padding: 0 14px;
-    border-radius: var(--pill);
+    min-height: 2rem;
+    padding: 0 13px;
+    border-radius: 8px;
     color: var(--dim);
-    font-size: 14px;
+    font-size: 13.5px;
     font-weight: 600;
     text-decoration: none;
     white-space: nowrap;
@@ -169,7 +169,7 @@
   nav a[aria-current="page"] {
     background: var(--raised);
     color: var(--ink);
-    box-shadow: 0 0 0 1px var(--line-2), 0 1px 3px var(--shadow);
+    box-shadow: 0 0 0 1px var(--line), 0 1px 2px var(--shadow);
   }
 
   .badge {
@@ -189,18 +189,23 @@
     justify-self: end;
     display: grid;
     place-items: center;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2.2rem;
+    height: 2.2rem;
     border: 0;
-    border-radius: var(--pill);
-    background: transparent;
-    color: var(--dim);
-    transition: color 0.15s ease, background-color 0.15s ease;
+    border-radius: 9px;
+    background: light-dark(var(--raised), var(--soft));
+    box-shadow: inset 0 0 0 1px var(--line);
+    color: var(--ink-2);
+    transition: color 0.15s ease, background-color 0.15s ease, transform 0.12s cubic-bezier(0.2, 0, 0, 1);
   }
 
   .settings:hover {
-    background: var(--soft);
-    color: var(--ink);
+    background: var(--ink);
+    color: var(--on-ink);
+  }
+
+  .settings:active {
+    transform: scale(0.96);
   }
 
   main {

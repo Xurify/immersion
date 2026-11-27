@@ -10,29 +10,27 @@
   /* Native language names only. CJK falls through to a system serif that has the glyphs. */
   --font-name: "Fraunces", "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif CJK JP", "Songti SC", serif;
 
-  --bg: light-dark(#f7f5f0, #0e0d0c);
-  --raised: light-dark(#ffffff, #171614);
-  --raised-2: light-dark(#fbfaf7, #1e1c1a);
-  --ink: light-dark(#141310, #f3f0e9);
-  --ink-2: light-dark(#3d3a33, #c9c4ba);
-  --dim: light-dark(#6e6a61, #8f8a80);
-  --line: light-dark(#e6e2d8, #2a2825);
-  --line-2: light-dark(#d6d1c5, #3a3733);
-  --soft: light-dark(#efece4, #23211e);
+  --bg: light-dark(#f8f7f4, #0e0d0c);
+  --raised: light-dark(#ffffff, #161513);
+  --raised-2: light-dark(#f3f1ec, #1d1b19);
+  --ink: light-dark(#161513, #f3f0e9);
+  --ink-2: light-dark(#44413b, #c9c4ba);
+  --dim: light-dark(#757067, #8f8a80);
+  --line: light-dark(#e6e3db, #292723);
+  --line-2: light-dark(#d4d0c5, #3a3733);
+  --soft: light-dark(#efede7, #22201d);
   --on-ink: light-dark(#ffffff, #121110);
   --focus: light-dark(#2f45d8, #8fa0ff);
   --danger: light-dark(#b3261e, #ff8a80);
-  --shadow: light-dark(rgba(20, 19, 16, 0.18), rgba(0, 0, 0, 0.6));
-  /* Cards that sit on the page: a hairline plus a soft drop. */
-  --lift: 0 0 0 1px var(--line), 0 1px 2px light-dark(rgba(20, 19, 16, 0.04), rgba(0, 0, 0, 0.3)),
-    0 8px 24px -12px light-dark(rgba(20, 19, 16, 0.12), rgba(0, 0, 0, 0.5));
+  --shadow: light-dark(rgba(22, 21, 19, 0.1), rgba(0, 0, 0, 0.5));
+  --lift: 0 0 0 1px var(--line), 0 1px 2px light-dark(rgba(22, 21, 19, 0.04), rgba(0, 0, 0, 0.28));
 
   --gutter: clamp(16px, 3vw, 40px);
 
   --r-sm: 6px;
-  --r-md: 14px;
-  --r-lg: 20px;
-  --r-xl: 24px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 18px;
   --pill: 999px;
 }
 
@@ -56,6 +54,26 @@ html {
   -webkit-font-smoothing: antialiased;
   background: var(--bg);
   color: var(--ink);
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: var(--pill);
+  background: var(--line-2);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--dim);
 }
 
 body {
@@ -181,7 +199,7 @@ img {
 }
 
 .btn:active:not(:disabled, .disabled) {
-  transform: scale(0.97);
+  transform: scale(0.96);
 }
 
 .btn:disabled {
@@ -205,13 +223,27 @@ img {
 .btn.ghost {
   background: transparent;
   color: inherit;
-  box-shadow: inset 0 0 0 1.5px currentColor;
-  transition: transform 0.12s ease, background-color 0.15s ease;
+  box-shadow: inset 0 0 0 1.25px color-mix(in srgb, currentColor 32%, transparent);
+  transition: transform 0.12s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn.ghost:hover:not(:disabled, .disabled) {
   opacity: 1;
   background: color-mix(in srgb, currentColor 10%, transparent);
+  box-shadow: inset 0 0 0 1.25px color-mix(in srgb, currentColor 55%, transparent);
+}
+
+.btn.soft {
+  background: light-dark(var(--raised), var(--soft));
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  transition: transform 0.12s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn.soft:hover:not(:disabled, .disabled) {
+  opacity: 1;
+  background: var(--soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 28%, var(--line-2));
 }
 
 .pill {

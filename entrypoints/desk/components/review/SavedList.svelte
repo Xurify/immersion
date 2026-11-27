@@ -69,8 +69,8 @@
 
 <style>
   h3 {
-    margin: 0 0 6px;
-    font-size: 20px;
+    margin: 0 0 12px;
+    font-size: 18px;
     font-weight: 800;
     letter-spacing: -0.01em;
   }
@@ -79,7 +79,10 @@
     margin: 0;
     padding: 0;
     list-style: none;
-    border-top: 1px solid var(--line);
+    overflow: hidden;
+    border-radius: 20px;
+    background: var(--raised);
+    box-shadow: var(--lift);
   }
 
   li {
@@ -87,8 +90,11 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--line);
+    padding: 14px 18px;
+  }
+
+  li + li {
+    border-top: 1px solid var(--line);
   }
 
   .body {

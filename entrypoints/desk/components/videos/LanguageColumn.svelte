@@ -76,9 +76,9 @@
     flex-direction: column;
     min-width: 0;
     overflow: hidden;
-    border-radius: var(--r-md);
-    background: var(--soft);
-    box-shadow: 0 0 0 1px var(--line);
+    border-radius: 14px;
+    background: var(--raised-2);
+    box-shadow: var(--lift);
   }
 
   .col.wide {
@@ -88,10 +88,10 @@
   .head {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 6px 12px;
-    padding: 14px 18px;
+    padding: 12px 16px;
     background: var(--c);
     color: #fff;
   }
@@ -103,29 +103,36 @@
   }
 
   .name {
-    font-size: 30px;
-    line-height: 1;
+    font-size: 24px;
+    line-height: 1.05;
   }
 
   .name.cjk {
-    font-size: 26px;
+    font-size: 22px;
   }
 
   .unknown-name {
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 700;
   }
 
   .count {
-    font-size: 13px;
-    font-weight: 600;
-    opacity: 0.9;
+    padding: 3px 10px;
+    border-radius: var(--pill);
+    background: rgb(0 0 0 / 0.18);
+    font-size: 12px;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
+  }
+
+  .unknown .count {
+    background: var(--soft);
+    color: var(--ink-2);
   }
 
   .list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
     gap: 10px;
     margin: 0;
     padding: 12px;

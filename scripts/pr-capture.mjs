@@ -8,7 +8,7 @@
 //   --surface   popup, desk, or both separated by commas (default: popup)
 //   --view      desk view: board, videos, review or history (default: board)
 //   --schemes   light, dark or both (default: light,dark)
-//   --widths    viewport widths in px (default: 360 for the popup, 1280,390 for the desk)
+//   --widths    viewport widths in px (default: 428 for the popup, 1280,390 for the desk)
 //   --fixture   JSON of storage values to seed before capturing; replaces the stored data
 //   --out       output folder (default: a folder under the system temp directory)
 //   --build     run `npm run build` first
@@ -78,7 +78,7 @@ function findChromium() {
 }
 
 const PAGES = {
-  popup: { file: "popup.html", height: 640, widths: [360] },
+  popup: { file: "popup.html", height: 640, widths: [428] },
   desk: { file: "desk.html", height: 860, widths: [1280, 390] },
 };
 

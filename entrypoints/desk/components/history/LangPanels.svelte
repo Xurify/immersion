@@ -129,20 +129,22 @@
     flex-direction: column;
     gap: 20px;
     min-width: 0;
-    padding: 24px;
+    padding: 22px;
     overflow: hidden;
-    border-radius: var(--r-xl);
-    background:
-      radial-gradient(120% 90% at 100% 0%, rgb(255 255 255 / 0.16), transparent 55%),
-      var(--c);
+    border-radius: 16px;
+    background: var(--c);
     color: #fff;
-    box-shadow: 0 1px 0 rgb(255 255 255 / 0.12) inset, 0 12px 32px -16px color-mix(in srgb, var(--c) 70%, #000);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), 0 1px 3px rgb(0 0 0 / 0.1);
+    transition: transform 0.16s cubic-bezier(0.2, 0, 0, 1);
   }
 
-  /* No time in range: a pale tint of the language colour, marks in the colour. */
+  .panel:hover {
+    transform: translateY(-2px);
+  }
+
   .panel.quiet {
     --mark: var(--c);
-    background: color-mix(in srgb, var(--c) 12%, var(--raised));
+    background: var(--raised);
     color: var(--ink);
     box-shadow: var(--lift);
   }
